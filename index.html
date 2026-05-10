@@ -1,0 +1,2499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DailyFuel">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>DailyFuel</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #293548;
+    --border: #334155;
+    --accent: #f97316;
+    --accent2: #fb923c;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    width: 100%;
+    overflow-x: hidden;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  #app {
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: calc(var(--safe-top) + 14px) 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .header-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .header-title span { color: var(--accent); }
+  .header-date { font-size: 13px; color: var(--text2); }
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%; background: var(--surface);
+    border: none; color: var(--text); font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1; padding: 12px 4px; text-align: center;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+    color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+
+  /* ── CONTENT ── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    touch-action: pan-y;
+    padding: 16px 16px calc(var(--safe-bottom) + 100px);
+  }
+
+  /* ── FAB ── */
+  .fab {
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 16px);
+    left: 50%; transform: translateX(-50%);
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; color: white; font-size: 28px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(249,115,22,0.45);
+    z-index: 150; transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .fab:active { transform: translateX(-50%) scale(0.93); box-shadow: 0 2px 10px rgba(249,115,22,0.3); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text2); margin-bottom: 12px;
+  }
+
+  /* ── CALORIE RING ── */
+  .ring-wrap { display: flex; align-items: center; gap: 20px; }
+  .ring-svg { flex-shrink: 0; }
+  .ring-text { text-align: center; }
+  .ring-big { font-size: 32px; font-weight: 800; line-height: 1; }
+  .ring-label { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .ring-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; }
+  .ring-stat { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px; text-align: center; }
+  .ring-stat-val { font-size: 18px; font-weight: 700; }
+  .ring-stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* ── FOOD LOG ── */
+  .food-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .food-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .food-thumb {
+    width: 48px; height: 48px; border-radius: 10px;
+    object-fit: cover; background: var(--surface2); flex-shrink: 0;
+  }
+  .food-thumb-placeholder {
+    width: 48px; height: 48px; border-radius: 10px;
+    background: var(--surface2); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .food-info { flex: 1; min-width: 0; }
+  .food-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .food-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .food-macros { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .macro-chip {
+    font-size: 12px; font-weight: 500; padding: 3px 9px;
+    border-radius: 100px;
+  }
+  .macro-chip.p { background: rgba(59,130,246,0.12); color: #60a5fa; }
+  .macro-chip.c { background: rgba(249,115,22,0.12); color: #fb923c; }
+  .macro-chip.f { background: rgba(234,179,8,0.12); color: #facc15; }
+  .macro-chip.fi { background: rgba(34,197,94,0.12); color: #4ade80; }
+  .macro-chip.s { background: rgba(239,68,68,0.12); color: #f87171; }
+  .food-kcal { font-size: 15px; font-weight: 700; color: var(--accent); flex-shrink: 0; white-space: nowrap; }
+  .food-del  { background: none; border: none; color: var(--red); font-size: 18px; cursor: pointer; padding: 4px; opacity: 0.7; }
+  .food-del:active { opacity: 1; }
+  .food-edit { background: none; border: none; color: var(--text3); font-size: 15px; cursor: pointer; padding: 4px; }
+
+  /* ── PORTION SCALER ── */
+  .portion-row {
+    display: flex; align-items: center; gap: 6px; margin-top: 6px;
+  }
+  .portion-lbl { font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .portion-stepper {
+    display: flex; align-items: center;
+    background: var(--surface2); border-radius: 8px;
+    border: 1px solid var(--border); overflow: hidden;
+  }
+  .portion-step-btn {
+    background: none; border: none; color: var(--text2);
+    font-size: 17px; font-weight: 700; cursor: pointer;
+    padding: 4px 10px; line-height: 1;
+    transition: color 0.15s;
+  }
+  .portion-step-btn:active { color: var(--accent); }
+  .portion-input {
+    background: none; border: none; color: var(--text);
+    font-size: 13px; font-weight: 600; text-align: center;
+    width: 54px; outline: none; padding: 4px 2px;
+    -webkit-appearance: none;
+  }
+  .portion-unit { font-size: 11px; color: var(--text3); margin-left: 2px; }
+  .portion-ref { font-size: 10px; color: var(--text3); background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; display: inline-block; margin-top: 4px; }
+  .portion-reset { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text2); font-size: 10px; cursor: pointer; padding: 2px 7px; margin-left: 4px; white-space: nowrap; }
+  .portion-reset:active { color: var(--accent); border-color: var(--accent); }
+
+  /* ── MACRO PROGRESS RINGS ── */
+  .macro-rings { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; margin-top: 4px; }
+  .macro-ring-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .macro-ring-lbl { font-size: 10px; color: var(--text2); text-align: center; }
+  .macro-ring-val { font-size: 10px; font-weight: 600; color: var(--text); }
+
+  /* ── FORM GRID ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .form-field { display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-field .input-field { padding: 10px 12px; font-size: 15px; }
+  .form-field.full { grid-column: span 2; }
+
+  /* ── WEIGHT ── */
+  .weight-display { text-align: center; padding: 8px 0 16px; }
+  .weight-big { font-size: 56px; font-weight: 800; line-height: 1; }
+  .weight-unit { font-size: 20px; color: var(--text2); margin-left: 4px; }
+  .weight-change { font-size: 14px; margin-top: 4px; }
+  .weight-change.up { color: var(--red); }
+  .weight-change.down { color: var(--green); }
+  .weight-change.same { color: var(--text2); }
+
+  .weight-log { }
+  .weight-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .weight-row:last-child { border-bottom: none; }
+  .weight-row-date { font-size: 14px; color: var(--text2); }
+  .weight-row-val { font-size: 16px; font-weight: 700; }
+  .weight-row-diff { font-size: 12px; margin-left: 8px; }
+
+  /* ── WEIGHT CHART ── */
+  .chart-wrap { margin-top: 4px; }
+  .wc-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 14px; }
+  .wc-stat { background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 6px; text-align: center; }
+  .wc-stat-val { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .wc-stat-lbl { font-size: 10px; color: var(--text2); margin-top: 3px; }
+  .wc-chart-area { position: relative; padding-left: 44px; }
+  .wc-y-labels { position: absolute; left: 0; top: 0; bottom: 20px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+  .wc-y-lbl { font-size: 9px; color: var(--text3); line-height: 1; white-space: nowrap; }
+  .wc-x-labels { display: flex; justify-content: space-between; margin-top: 5px; }
+  .wc-x-lbl { font-size: 9px; color: var(--text3); }
+  .wc-projection { font-size: 12px; color: var(--text2); text-align: center; margin-top: 10px; padding: 8px; background: var(--surface2); border-radius: var(--radius-sm); }
+  .wc-projection strong { color: var(--green); font-weight: 700; }
+
+  /* ── INPUT ROW ── */
+  .input-row {
+    display: flex; gap: 8px; margin-bottom: 12px;
+  }
+  .input-field {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    color: var(--text); font-size: 16px; outline: none;
+    -webkit-appearance: none;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .btn {
+    padding: 12px 20px; border-radius: var(--radius-sm);
+    border: none; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .btn:active { opacity: 0.75; }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-surface { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+  /* ── SETTINGS ── */
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 15px; }
+  .setting-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .setting-input {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px;
+    color: var(--text); font-size: 15px; outline: none;
+    width: 140px; text-align: right; -webkit-appearance: none;
+  }
+  .setting-input:focus { border-color: var(--accent); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 200; display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
+    width: 100%; padding: 0;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(.32,.72,0,1);
+    max-height: 90vh; overflow: hidden; touch-action: pan-y;
+    display: flex; flex-direction: column;
+  }
+  .modal-scroll {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 20px 20px 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .modal-footer {
+    padding: 12px 20px calc(var(--safe-bottom) + 16px);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-handle {
+    width: 36px; height: 4px; background: var(--border);
+    border-radius: 2px; margin: 0 auto 20px;
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+
+  /* ── CAMERA AREA ── */
+  .camera-area {
+    width: 100%; aspect-ratio: 4/3;
+    background: var(--surface2); border-radius: var(--radius-sm);
+    border: 2px dashed var(--border);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer; margin-bottom: 16px; overflow: hidden;
+    position: relative;
+  }
+  .camera-area img { width: 100%; height: 100%; object-fit: cover; }
+  .camera-placeholder { text-align: center; color: var(--text2); }
+  .camera-placeholder .cam-icon { font-size: 48px; margin-bottom: 8px; }
+  #fileInput { display: none; }
+
+  .analyzing {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 10px; padding: 20px 0; color: var(--text2);
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result-box {
+    background: var(--surface2); border-radius: var(--radius-sm);
+    padding: 14px; margin-bottom: 16px; border: 1px solid var(--border);
+  }
+  .result-food-name { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .result-kcal { font-size: 28px; font-weight: 800; color: var(--accent); }
+  .result-note { font-size: 12px; color: var(--text2); margin-top: 6px; line-height: 1.5; }
+
+  /* ── PROGRESS BAR ── */
+  .prog-bar-wrap { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+  .prog-bar { height: 100%; border-radius: 4px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 40px 20px; color: var(--text2); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 15px; }
+  .empty-sub { font-size: 13px; color: var(--text3); margin-top: 6px; }
+
+  /* ── SECTION HEADING ── */
+  .section-head {
+    font-size: 13px; font-weight: 600; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin: 8px 0 8px;
+  }
+
+  /* ── STREAK ── */
+  .streak-row { display: flex; gap: 6px; justify-content: center; }
+  .streak-dot { width: 32px; height: 32px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .streak-dot.hit { background: var(--accent); border-color: var(--accent); }
+  .streak-dot.today { border-color: var(--accent); }
+
+  /* ── SEGMENTED CONTROL ── */
+  .seg-group { display: flex; gap: 4px; background: var(--surface2); border-radius: 10px; padding: 4px; }
+  .seg-btn {
+    flex: 1; padding: 7px 6px; border: none; border-radius: 7px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    background: transparent; color: var(--text2);
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .seg-btn.active { background: var(--accent); color: white; }
+
+  /* scroll bar */
+  .content::-webkit-scrollbar { display: none; }
+
+  /* ── RECENTS STRIP ── */
+  .recents-strip {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .recents-strip::-webkit-scrollbar { display: none; }
+  .recent-chip {
+    flex-shrink: 0; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 100px; padding: 7px 12px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    text-align: left;
+  }
+  .recent-chip:active { background: rgba(249,115,22,0.15); border-color: var(--accent); }
+  .recent-chip-name { font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--text); }
+  .recent-chip-kcal { font-size: 11px; color: var(--accent); white-space: nowrap; }
+
+  /* ── SEARCH MODE ── */
+  .search-input-wrap { position: relative; margin-bottom: 12px; }
+  .search-input-wrap .input-field { padding-left: 40px; }
+  .search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 17px; pointer-events: none; color: var(--text3);
+  }
+  .search-results { display: flex; flex-direction: column; gap: 8px; }
+  .search-result-item {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    cursor: pointer; transition: border-color 0.15s;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .search-result-item:active { border-color: var(--accent); background: rgba(249,115,22,0.1); }
+  .search-result-name { font-size: 15px; font-weight: 600; }
+  .search-result-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .search-result-kcal { font-size: 17px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+  .search-empty { text-align: center; padding: 30px 0; color: var(--text2); font-size: 14px; }
+  .search-hint { text-align: center; padding: 30px 0 10px; color: var(--text3); font-size: 13px; line-height: 1.6; }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: calc(var(--safe-bottom) + 90px);
+    left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 100px; padding: 10px 20px;
+    font-size: 14px; font-weight: 600; color: var(--text);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 300; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="header-title">Daily<span>Fuel</span></div>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('today')" id="tab-today">
+      <span class="tab-icon">🍽️</span>Today
+    </div>
+    <div class="tab" onclick="showTab('weight')" id="tab-weight">
+      <span class="tab-icon">⚖️</span>Weight
+    </div>
+    <div class="tab" onclick="showTab('history')" id="tab-history">
+      <span class="tab-icon">📊</span>History
+    </div>
+    <div class="tab" onclick="showTab('settings')" id="tab-settings">
+      <span class="tab-icon">⚙️</span>Settings
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content"></div>
+
+  <!-- FAB (only on today tab) -->
+  <button class="fab" id="fab" onclick="viewingDate && viewingDate !== todayStr() ? openFoodModalForDate(viewingDate) : openFoodModal()" title="Log food">+</button>
+</div>
+
+<!-- FOOD MODAL -->
+<div class="modal-overlay" id="foodModal">
+  <div class="modal">
+    <div class="modal-scroll" id="foodModalScroll">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="foodModalTitle">Log Food</div>
+
+    <!-- Recents section (hidden when empty) -->
+    <div id="recentsSection" style="display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">⚡ Recent &amp; Saved</div>
+      <div class="search-input-wrap" style="margin-bottom:8px">
+        <span class="search-icon" style="font-size:14px">🔍</span>
+        <input class="input-field" id="recentsSearchInput" placeholder="Filter history…" type="text" autocomplete="off" autocorrect="off" autocapitalize="none"
+          oninput="renderRecents(this.value)" style="padding-left:36px;padding-top:9px;padding-bottom:9px;font-size:14px">
+      </div>
+      <div class="recents-strip" id="recentsStrip"></div>
+    </div>
+
+    <!-- Mode switcher -->
+    <div class="seg-group" style="margin-bottom:16px" id="foodModeSwitcher">
+      <button class="seg-btn active" id="modeBtn-photo" onclick="setFoodMode('photo')">📷 Photo</button>
+      <button class="seg-btn" id="modeBtn-search" onclick="setFoodMode('search')">🔍 Search</button>
+      <button class="seg-btn" id="modeBtn-meal" onclick="setFoodMode('meal')">🍱 Meals</button>
+      <button class="seg-btn" id="modeBtn-manual" onclick="setFoodMode('manual')">✏️ Manual</button>
+    </div>
+
+    <!-- ── PHOTO MODE ── -->
+    <div id="photoModeBox">
+      <div class="camera-area" id="cameraArea" onclick="document.getElementById('fileInput').click()">
+        <div class="camera-placeholder">
+          <div class="cam-icon">📷</div>
+          <div>Tap to take a photo</div>
+          <div style="font-size:12px;margin-top:4px;color:var(--text3)">or choose from library</div>
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" onchange="onImageSelected(event)">
+      <div class="analyzing" id="analyzingBox" style="display:none">
+        <div class="spinner"></div>
+        <div>Analysing your food with AI…</div>
+      </div>
+      <div id="resultBox" style="display:none"></div>
+    </div>
+
+    <!-- ── SEARCH MODE ── -->
+    <div id="searchModeBox" style="display:none">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="input-field" id="searchInput" placeholder="Search for a food…" type="text" autocomplete="off" autocorrect="off" oninput="onSearchInput()" autocapitalize="none">
+      </div>
+      <div id="searchSpinner" style="display:none" class="analyzing">
+        <div class="spinner"></div>
+        <div>Searching nutrition data…</div>
+      </div>
+      <div id="searchResults" class="search-results">
+        <div class="search-hint">Type a food name to search.<br>e.g. <em>"2 scrambled eggs"</em> or <em>"large latte"</em></div>
+      </div>
+    </div>
+
+    <!-- ── MEAL MODE ── -->
+    <div id="mealModeBox" style="display:none">
+      <div id="mealListView">
+        <div class="search-input-wrap" style="margin-bottom:10px">
+          <span class="search-icon" style="font-size:14px">🔍</span>
+          <input class="input-field" id="mealSearchInput" placeholder="Search saved meals…" type="text" autocomplete="off" oninput="renderMealList(this.value)" style="padding-left:36px;padding-top:9px;padding-bottom:9px;font-size:14px">
+        </div>
+        <div id="mealListResults"></div>
+        <button class="btn btn-surface" style="width:100%;margin-top:10px;padding:11px;font-size:14px" onclick="startBuildMeal()">+ Build a new meal from ingredients</button>
+      </div>
+      <div id="mealBuilderView" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <button class="btn btn-surface" style="padding:8px 12px;font-size:13px" onclick="document.getElementById('mealListView').style.display='block';document.getElementById('mealBuilderView').style.display='none';renderMealList()">← Back</button>
+          <div style="font-size:15px;font-weight:700">Build Custom Meal</div>
+        </div>
+        <input class="input-field" id="mealNameInput" placeholder="Meal name (e.g. Protein Bowl)" style="margin-bottom:10px;width:100%;font-size:15px">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Add ingredients</div>
+        <div class="search-input-wrap" style="margin-bottom:8px">
+          <span class="search-icon" style="font-size:14px">🔍</span>
+          <input class="input-field" id="mealIngredientSearch" placeholder="Search food or type name…" type="text" autocomplete="off" oninput="onMealIngredientInput()" style="padding-left:36px;padding-top:9px;padding-bottom:9px;font-size:14px">
+        </div>
+        <div id="mealIngredientResults" style="margin-bottom:10px"></div>
+        <div id="mealIngredientList" style="margin-bottom:10px"></div>
+        <div id="mealTotalsRow" style="display:none;background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--text2)"></div>
+        <button class="btn btn-accent" style="width:100%;padding:12px;font-size:15px" onclick="saveMeal()">Save Meal</button>
+      </div>
+    </div>
+
+    <!-- Full editable form (shared by all modes) -->
+    <div id="manualBox" style="display:none">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px" id="manualBoxLabel">Edit Details</div>
+      <div class="form-grid">
+        <div class="form-field full">
+          <div class="form-label">Food Name</div>
+          <input class="input-field" id="fName" placeholder="e.g. Chicken breast" type="text">
+        </div>
+        <div class="form-field">
+          <div class="form-label">Portion Size</div>
+          <input class="input-field" id="fPortion" placeholder="e.g. 150g or 1 cup" type="text">
+        </div>
+        <div class="form-field">
+          <div class="form-label">Calories (kcal)</div>
+          <input class="input-field" id="fKcal" placeholder="e.g. 250" type="number" inputmode="numeric">
+        </div>
+        <div class="form-field">
+          <div class="form-label">Protein (g)</div>
+          <input class="input-field" id="fProtein" placeholder="e.g. 30" type="number" inputmode="decimal" step="0.1">
+        </div>
+        <div class="form-field">
+          <div class="form-label">Carbs (g)</div>
+          <input class="input-field" id="fCarbs" placeholder="e.g. 0" type="number" inputmode="decimal" step="0.1">
+        </div>
+        <div class="form-field">
+          <div class="form-label">Fat (g)</div>
+          <input class="input-field" id="fFat" placeholder="e.g. 5" type="number" inputmode="decimal" step="0.1">
+        </div>
+        <div class="form-field">
+          <div class="form-label">Fibre (g)</div>
+          <input class="input-field" id="fFibre" placeholder="e.g. 0" type="number" inputmode="decimal" step="0.1">
+        </div>
+        <div class="form-field">
+          <div class="form-label">Sugar (g)</div>
+          <input class="input-field" id="fSugar" placeholder="e.g. 0" type="number" inputmode="decimal" step="0.1">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">All macro fields are optional — fill in what you know.</div>
+    </div>
+    </div><!-- end modal-scroll -->
+    <div class="modal-footer">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-surface" style="flex:1" onclick="closeFoodModal()">Cancel</button>
+        <button class="btn btn-accent" style="flex:2" id="logBtn" onclick="logFood()">Log Food</button>
+      </div>
+      <div id="deleteEntryRow" style="display:none;margin-top:10px">
+        <button class="btn" style="width:100%;background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25);padding:12px" onclick="deleteEditingEntry()">Delete Entry</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WEIGHT MODAL -->
+<div class="modal-overlay" id="weightModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Log Weight</div>
+    <div id="weightModalBody"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-surface" style="flex:1" onclick="closeWeightModal()">Cancel</button>
+      <button class="btn btn-accent" style="flex:2" onclick="saveWeight()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────────
+const STORAGE = {
+  get(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+};
+
+const DEFAULT_MACRO_SPLIT = { proteinPct: 30, carbsPct: 40, fatPct: 30, fibreG: 30, sugarG: 30 };
+
+let settings = STORAGE.get('df_settings', {
+  apiKey: '',
+  dailyGoal: 2500,
+  weightUnit: 'kg',      // 'kg' | 'st_lbs' | 'lbs'
+  foodUnit: 'g',         // 'g' | 'oz' | 'ml'
+  name: '',
+  macroSplit: { ...DEFAULT_MACRO_SPLIT },
+  targetWeight: null,    // stored in kg
+});
+// Ensure macroSplit exists for users upgrading from older saved data
+if (!settings.macroSplit) settings.macroSplit = { ...DEFAULT_MACRO_SPLIT };
+
+function macroTargets() {
+  const s = settings.macroSplit;
+  const kcal = settings.dailyGoal || 2500;
+  return {
+    protein: Math.round((kcal * (s.proteinPct / 100)) / 4),
+    carbs:   Math.round((kcal * (s.carbsPct   / 100)) / 4),
+    fat:     Math.round((kcal * (s.fatPct     / 100)) / 9),
+    fibre:   s.fibreG,
+    sugar:   s.sugarG,
+  };
+}
+let foodLog  = STORAGE.get('df_food', []);   // [{id, date, name, kcal, thumb, time}]
+let weightLog = STORAGE.get('df_weight', []); // [{date, kg}]
+
+function save() {
+  STORAGE.set('df_settings', settings);
+  STORAGE.set('df_food', foodLog);
+  STORAGE.set('df_weight', weightLog);
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function fmtDate(d) {
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
+}
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+}
+function todayKcal() { return foodLog.filter(f=>f.date===todayStr()).reduce((s,f)=>s+f.kcal,0); }
+function todayMacros() {
+  const items = foodLog.filter(f=>f.date===todayStr());
+  return {
+    protein: items.reduce((s,f)=>s+(f.protein||0),0),
+    carbs:   items.reduce((s,f)=>s+(f.carbs||0),0),
+    fat:     items.reduce((s,f)=>s+(f.fat||0),0),
+    fibre:   items.reduce((s,f)=>s+(f.fibre||0),0),
+    sugar:   items.reduce((s,f)=>s+(f.sugar||0),0),
+  };
+}
+function macroChipsHTML(f) {
+  const chips = [];
+  if (f.protein != null) chips.push(`<span class="macro-chip p">Protein ${f.protein}g</span>`);
+  if (f.carbs   != null) chips.push(`<span class="macro-chip c">Carbs ${f.carbs}g</span>`);
+  if (f.fat     != null) chips.push(`<span class="macro-chip f">Fat ${f.fat}g</span>`);
+  if (f.fibre   != null) chips.push(`<span class="macro-chip fi">Fibre ${f.fibre}g</span>`);
+  if (f.sugar   != null) chips.push(`<span class="macro-chip s">Sugar ${f.sugar}g</span>`);
+  return chips.length ? `<div class="food-macros">${chips.join('')}</div>` : '';
+}
+function copyToToday(id) {
+  const f = foodLog.find(x => x.id === id);
+  if (!f) return;
+  const entry = {
+    ...f,
+    id:   uid(),
+    date: todayStr(),
+    time: new Date().toISOString(),
+  };
+  foodLog.push(entry);
+  save();
+  showToast(`Copied to today: ${f.name}`);
+  renderContent();
+}
+
+function foodItemHTML(f, showDel=true, showCopy=false) {
+  const portion = f.portion ? `<span style="color:var(--text3)"> · ${f.portion}</span>` : '';
+
+  // Portion scaler — only shown when we have base data to scale from
+  let portionScalerHTML = '';
+  if (showDel && f.basePortion && f.basePortion > 0) {
+    const unit = foodUnitLabel();
+    const current = f.currentPortion != null ? f.currentPortion : f.basePortion;
+    const portionMult = f.portionMultiplier != null ? f.portionMultiplier : 1;
+    const isScaled = current !== f.basePortion || portionMult !== 1;
+    portionScalerHTML = `
+      <div class="portion-row" style="flex-wrap:wrap;gap:6px 6px">
+        <span class="portion-lbl">Serving</span>
+        <div class="portion-stepper">
+          <button class="portion-step-btn" onclick="stepPortion('${f.id}',-5);event.stopPropagation()">−</button>
+          <input class="portion-input" type="number" inputmode="decimal"
+            value="${current}"
+            onchange="updatePortion('${f.id}',this.value)"
+            onclick="event.stopPropagation()"
+            onblur="updatePortion('${f.id}',this.value)">
+          <button class="portion-step-btn" onclick="stepPortion('${f.id}',5);event.stopPropagation()">+</button>
+        </div>
+        <span class="portion-unit">${unit}</span>
+        <span class="portion-lbl" style="margin-left:4px">× Portions</span>
+        <div class="portion-stepper">
+          <button class="portion-step-btn" onclick="stepPortionMult('${f.id}',-0.25);event.stopPropagation()">−</button>
+          <input class="portion-input" type="number" inputmode="decimal" step="0.25"
+            value="${portionMult}"
+            onchange="updatePortionMult('${f.id}',this.value)"
+            onclick="event.stopPropagation()"
+            onblur="updatePortionMult('${f.id}',this.value)"
+            style="width:46px">
+          <button class="portion-step-btn" onclick="stepPortionMult('${f.id}',0.25);event.stopPropagation()">+</button>
+        </div>
+        ${isScaled ? `<button class="portion-reset" onclick="resetPortion('${f.id}');event.stopPropagation()">↩ Reset</button>` : ''}
+      </div>
+      <span class="portion-ref">1 serving = ${f.basePortion}${unit} / ${f.baseMacros.kcal} kcal · Now: ${Math.round(f.baseMacros.kcal * (current/f.basePortion) * portionMult)} kcal</span>`;
+  }
+
+  return `
+  <div class="food-item" ${showDel ? `onclick="openEditModal('${f.id}')" style="cursor:pointer"` : ''}>
+    ${f.thumb ? `<img class="food-thumb" src="${f.thumb}" alt="${f.name}">` : `<div class="food-thumb-placeholder">🍴</div>`}
+    <div class="food-info">
+      <div class="food-name">${f.name}</div>
+      <div class="food-meta">${fmtTime(f.time)}${portion}</div>
+      ${macroChipsHTML(f)}
+      ${portionScalerHTML}
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+      <div class="food-kcal">${f.kcal} kcal</div>
+      ${showCopy ? `<button class="food-edit" onclick="copyToToday('${f.id}');event.stopPropagation()" title="Copy to today" style="font-size:13px">📋 Today</button>` : ''}
+      ${showDel ? `<button class="food-edit" onclick="openEditModal('${f.id}');event.stopPropagation()" title="Edit">✏️</button>
+                  <button class="food-del" onclick="deleteFood('${f.id}');event.stopPropagation()" title="Delete">
+                    <svg width="17" height="22" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 4h12M5 4V2h4v2M2 4l1 12h8l1-12M5 8v5M9 8v5"/>
+                    </svg>
+                  </button>` : ''}
+    </div>
+  </div>`;
+}
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function uid(){ return Date.now().toString(36)+rand(100,999); }
+
+// ── UNIT HELPERS ─────────────────────────────────────────────────────────────
+// Weight: always stored as kg internally; convert for display/input
+function kgToDisplay(kg) {
+  const u = settings.weightUnit;
+  if (u === 'kg') return { val: kg.toFixed(1), unit: 'kg', single: kg.toFixed(1) + ' kg' };
+  if (u === 'lbs') {
+    const lbs = (kg * 2.20462).toFixed(1);
+    return { val: lbs, unit: 'lbs', single: lbs + ' lbs' };
+  }
+  if (u === 'st_lbs') {
+    const totalLbs = kg * 2.20462;
+    const st = Math.floor(totalLbs / 14);
+    const lbs = Math.round(totalLbs % 14);
+    return { val: `${st}st ${lbs}`, unit: 'lbs', single: `${st}st ${lbs}lbs` };
+  }
+}
+function displayToKg(val1, val2) {
+  // val1 = stones or main value, val2 = lbs remainder (only for st_lbs)
+  const u = settings.weightUnit;
+  if (u === 'kg') return parseFloat(val1);
+  if (u === 'lbs') return parseFloat(val1) / 2.20462;
+  if (u === 'st_lbs') {
+    const st = parseFloat(val1) || 0;
+    const lbs = parseFloat(val2) || 0;
+    return (st * 14 + lbs) / 2.20462;
+  }
+}
+function weightUnitLabel() {
+  return settings.weightUnit === 'kg' ? 'kg' : settings.weightUnit === 'lbs' ? 'lbs' : 'st / lbs';
+}
+function weightDiffLabel(diffKg) {
+  const u = settings.weightUnit;
+  if (u === 'kg') return (diffKg > 0 ? '+' : '') + diffKg.toFixed(1) + ' kg';
+  if (u === 'lbs') {
+    const d = diffKg * 2.20462;
+    return (d > 0 ? '+' : '') + d.toFixed(1) + ' lbs';
+  }
+  if (u === 'st_lbs') {
+    const totalLbs = diffKg * 2.20462;
+    const st = Math.floor(Math.abs(totalLbs) / 14);
+    const lbs = Math.round(Math.abs(totalLbs) % 14);
+    const sign = totalLbs > 0 ? '+' : '-';
+    return st > 0 ? `${sign}${st}st ${lbs}lbs` : `${sign}${lbs}lbs`;
+  }
+}
+function foodUnitLabel() {
+  return settings.foodUnit || 'g';
+}
+
+function showToast(msg, dur=2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+// ── HEADER ───────────────────────────────────────────────────────────────────
+document.getElementById('headerDate').textContent =
+  new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+let currentTab = 'today';
+let weightChartPeriod = '1M'; // '2W' | '1M' | '3M' | '6M' | 'all'
+let historyFocusDate = null;  // date string to scroll/highlight in history tab
+let logFoodForDate = null;    // override date for food logging (null = today)
+let viewingDate = null;       // date being viewed on the today tab (null = actual today)
+
+function showTab(name) {
+  currentTab = name;
+  if (name !== 'history') historyFocusDate = null;
+  if (name === 'today') viewingDate = null;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name)?.classList.add('active');
+  document.getElementById('fab').style.display = (name === 'today') ? 'flex' : 'none';
+  renderContent();
+}
+
+function jumpToHistoryDate(date) {
+  historyFocusDate = date;
+  currentTab = 'history';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-history')?.classList.add('active');
+  document.getElementById('fab').style.display = 'none';
+  renderContent();
+  // Scroll to the focused card after render
+  setTimeout(() => {
+    const el = document.getElementById('hday-' + date);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function viewPastDay(date) {
+  viewingDate = date;
+  currentTab = 'today';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-today')?.classList.add('active');
+  document.getElementById('fab').style.display = 'flex';
+  renderContent();
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderContent() {
+  const c = document.getElementById('content');
+  if (currentTab === 'today')    c.innerHTML = renderToday();
+  if (currentTab === 'weight')   c.innerHTML = renderWeight();
+  if (currentTab === 'history')  c.innerHTML = renderHistory();
+  if (currentTab === 'settings') c.innerHTML = renderSettings();
+
+  if (currentTab === 'settings') bindSettings();
+  if (currentTab === 'weight')   bindWeightChart();
+}
+
+// TODAY TAB
+function renderToday() {
+  const activeDate = viewingDate || todayStr();
+  const isViewingPast = viewingDate && viewingDate !== todayStr();
+  const goal = settings.dailyGoal;
+
+  function dateKcal(date) { return foodLog.filter(f=>f.date===date).reduce((s,f)=>s+f.kcal,0); }
+  function dateMacros(date) {
+    const items = foodLog.filter(f=>f.date===date);
+    return {
+      protein: items.reduce((s,f)=>s+(f.protein||0),0),
+      carbs:   items.reduce((s,f)=>s+(f.carbs||0),0),
+      fat:     items.reduce((s,f)=>s+(f.fat||0),0),
+      fibre:   items.reduce((s,f)=>s+(f.fibre||0),0),
+      sugar:   items.reduce((s,f)=>s+(f.sugar||0),0),
+    };
+  }
+
+  const eaten = dateKcal(activeDate);
+  const remaining = goal - eaten;
+  const pct = Math.min(eaten / goal, 1);
+  const circumference = 2 * Math.PI * 52;
+  const dash = circumference * pct;
+  const colour = pct > 1 ? '#ef4444' : pct > 0.85 ? '#f59e0b' : '#f97316';
+
+  const todayItems = foodLog.filter(f => f.date === activeDate).reverse();
+
+  // 7-day streak dots
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0,10);
+    const hit = foodLog.some(f => f.date === ds);
+    const isToday = ds === todayStr();
+    const isViewing = ds === activeDate;
+    const letter = ['M','T','W','T','F','S','S'][(d.getDay()+6)%7];
+    const onclick = isToday
+      ? `showTab('today')`
+      : `viewPastDay('${ds}')`;
+    const extraStyle = isViewing && isViewingPast ? 'outline:2px solid var(--accent);outline-offset:2px;' : '';
+    days.push(`<div class="streak-dot${hit?' hit':''}${isToday&&!hit?' today':''}" onclick="${onclick}" style="cursor:pointer;${extraStyle}" title="${fmtDate(ds)}">${letter}</div>`);
+  }
+
+  return `
+  ${isViewingPast ? `
+  <div style="background:rgba(249,115,22,0.12);border:1.5px solid var(--accent);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--accent)">📅 Viewing: ${fmtDate(activeDate)}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">You are not logged in to today. Tap <strong>Today</strong> to return.</div>
+    </div>
+    <button class="btn btn-accent" style="padding:8px 14px;font-size:13px;white-space:nowrap" onclick="showTab('today')">Go to Today</button>
+  </div>` : ''}
+
+  <div class="card">
+    <div class="card-title">${isViewingPast ? fmtDate(activeDate) + ' — Calories' : "Today's Calories"}</div>
+    <div class="ring-wrap">
+      <svg width="120" height="120" class="ring-svg">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="${'var(--surface2)'}" stroke-width="10"/>
+        <circle cx="60" cy="60" r="52" fill="none" stroke="${colour}" stroke-width="10"
+          stroke-dasharray="${dash.toFixed(1)} ${(circumference-dash).toFixed(1)}"
+          stroke-dashoffset="${(circumference*0.25).toFixed(1)}"
+          stroke-linecap="round" transform="rotate(-90 60 60)"/>
+        <text x="60" y="54" text-anchor="middle" fill="${'var(--text)'}" font-size="20" font-weight="800">${eaten}</text>
+        <text x="60" y="70" text-anchor="middle" fill="${'var(--text2)'}" font-size="10">kcal eaten</text>
+      </svg>
+      <div class="ring-stats">
+        <div class="ring-stat">
+          <div class="ring-stat-val" style="color:var(--accent)">${goal}</div>
+          <div class="ring-stat-lbl">Goal</div>
+        </div>
+        <div class="ring-stat">
+          <div class="ring-stat-val" style="color:${remaining<0?'var(--red)':'var(--green)'}">${Math.abs(remaining)}</div>
+          <div class="ring-stat-lbl">${remaining < 0 ? 'Over' : 'Left'}</div>
+        </div>
+        <div class="ring-stat" style="grid-column:span 2">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">${Math.round(pct*100)}% of goal</div>
+          <div class="prog-bar-wrap"><div class="prog-bar" style="width:${Math.min(pct*100,100)}%;background:${colour}"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  ${(() => {
+    const m = dateMacros(activeDate);
+    const hasMacros = m.protein || m.carbs || m.fat || m.fibre || m.sugar;
+    if (!hasMacros) return '';
+    const t = macroTargets();
+    const ringHTML = (val, target, colour, label) => {
+      const pct = Math.min(val / target, 1);
+      const r = 20, circ = 2 * Math.PI * r;
+      const dash = (pct * circ).toFixed(1);
+      const gap = (circ - pct * circ).toFixed(1);
+      const over = val > target;
+      const col = over ? 'var(--red)' : colour;
+      const displayPct = Math.round((val / target) * 100);
+      return `<div class="macro-ring-item">
+        <svg width="52" height="52" viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="6"/>
+          <circle cx="26" cy="26" r="${r}" fill="none" stroke="${col}" stroke-width="6"
+            stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${(circ * 0.25).toFixed(1)}"
+            stroke-linecap="round" transform="rotate(-90 26 26)"/>
+          <text x="26" y="30" text-anchor="middle" font-size="10" font-weight="600" fill="${col}">${displayPct}%</text>
+        </svg>
+        <div class="macro-ring-lbl">${label}</div>
+        <div class="macro-ring-val">${val.toFixed(0)}g</div>
+      </div>`;
+    };
+    return `<div class="card">
+      <div class="card-title">${isViewingPast ? fmtDate(activeDate) + ' — Macros' : "Today's Macros"}</div>
+      <div class="macro-rings">
+        ${ringHTML(m.protein, t.protein, '#60a5fa', 'Protein')}
+        ${ringHTML(m.carbs,   t.carbs,   '#fb923c', 'Carbs')}
+        ${ringHTML(m.fat,     t.fat,     '#facc15', 'Fat')}
+        ${ringHTML(m.fibre,   t.fibre,   '#4ade80', 'Fibre')}
+        ${ringHTML(m.sugar,   t.sugar,   '#f87171', 'Sugar')}
+      </div>
+    </div>`;
+  })()}
+
+  <div class="card">
+    <div class="card-title">7-Day Logging Streak</div>
+    <div class="streak-row">${days.join('')}</div>
+  </div>
+
+  <div class="section-head">${isViewingPast ? fmtDate(activeDate) + ' — Log' : "Today's Log"}</div>
+  <div class="card" style="padding:0 16px">
+    ${todayItems.length === 0
+      ? `<div class="empty" style="padding:28px 0">
+          <div class="empty-icon">🍽️</div>
+          <div class="empty-text">No food logged ${isViewingPast ? 'this day' : 'yet'}</div>
+          <div class="empty-sub">${isViewingPast ? 'Tap + to add food to this day' : 'Tap + to log your first meal'}</div>
+        </div>`
+      : todayItems.map(f => foodItemHTML(f, true, isViewingPast)).join('')
+    }
+  </div>
+  ${isViewingPast ? `
+  <button class="btn btn-surface" style="width:100%;margin-top:4px;padding:12px;font-size:14px" onclick="openFoodModalForDate('${activeDate}')">
+    + Add food to ${fmtDate(activeDate)}
+  </button>` : ''}`;
+}
+
+// WEIGHT TAB
+function setWeightPeriod(p) {
+  weightChartPeriod = p;
+  renderContent();
+}
+
+function renderWeight() {
+  const sorted = [...weightLog].sort((a,b)=>a.date.localeCompare(b.date));
+  const latest = sorted[sorted.length-1];
+  const prev   = sorted[sorted.length-2];
+
+  // Current weight display + change
+  let diffHTML = '';
+  if (latest && prev) {
+    const diff = latest.kg - prev.kg;
+    const label = weightDiffLabel(diff);
+    if (diff > 0) diffHTML = `<div class="weight-change up">▲ ${label} from last entry</div>`;
+    else if (diff < 0) diffHTML = `<div class="weight-change down">▼ ${label} from last entry</div>`;
+    else diffHTML = `<div class="weight-change same">No change from last entry</div>`;
+  }
+  const latestDisp = latest ? kgToDisplay(latest.kg) : null;
+
+  // ── CHART ────────────────────────────────────────────────────────────────
+  let chartCard = '';
+  if (sorted.length >= 2) {
+    // Filter by period
+    const now = new Date();
+    const cutoff = new Date(now);
+    if      (weightChartPeriod === '2W')  cutoff.setDate(now.getDate() - 14);
+    else if (weightChartPeriod === '1M')  cutoff.setMonth(now.getMonth() - 1);
+    else if (weightChartPeriod === '3M')  cutoff.setMonth(now.getMonth() - 3);
+    else if (weightChartPeriod === '6M')  cutoff.setMonth(now.getMonth() - 6);
+    else cutoff.setFullYear(2000);
+
+    const slice = sorted.filter(w => new Date(w.date + 'T12:00:00') >= cutoff);
+    const pts = slice.length >= 2 ? slice : sorted.slice(-2);
+
+    const vals = pts.map(w => w.kg);
+    const pad = { t: 8, r: 8, b: 22, l: 0 };
+    const W = 320, H = 120;
+    const minV = Math.min(...vals) - 0.3;
+    const maxV = Math.max(...vals) + 0.3;
+    const range = maxV - minV || 1;
+
+    const cx = (i) => pad.l + (i / (vals.length - 1)) * (W - pad.l - pad.r);
+    const cy = (v) => pad.t + (1 - (v - minV) / range) * (H - pad.t - pad.b);
+
+    // Smooth bezier path
+    const pathD = vals.map((v, i) => {
+      if (i === 0) return `M${cx(i).toFixed(1)},${cy(v).toFixed(1)}`;
+      const x0 = cx(i-1), y0 = cy(vals[i-1]);
+      const x1 = cx(i),   y1 = cy(v);
+      const cpx = (x0 + x1) / 2;
+      return `C${cpx.toFixed(1)},${y0.toFixed(1)} ${cpx.toFixed(1)},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+    }).join(' ');
+
+    const areaD = pathD + ` L${cx(vals.length-1).toFixed(1)},${(H-pad.b).toFixed(1)} L${cx(0).toFixed(1)},${(H-pad.b).toFixed(1)} Z`;
+
+    // Trend line (linear regression)
+    const n = vals.length;
+    const sumX = vals.reduce((_,__,i)=>_+i,0);
+    const sumY = vals.reduce((s,v)=>s+v,0);
+    const sumXY = vals.reduce((s,v,i)=>s+i*v,0);
+    const sumX2 = vals.reduce((s,_,i)=>s+i*i,0);
+    const slope = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX);
+    const intercept = (sumY - slope*sumX) / n;
+    const trendY0 = intercept;
+    const trendY1 = intercept + slope*(n-1);
+
+    // Y-axis labels (4 evenly spaced)
+    const yLabels = [0,1,2,3].map(i => {
+      const v = maxV - (i / 3) * range;
+      const disp = kgToDisplay(v);
+      const u = settings.weightUnit;
+      let label;
+      if (u === 'st_lbs') {
+        const totalLbs = v * 2.20462;
+        const st = Math.floor(totalLbs / 14);
+        const lbs = Math.round(totalLbs % 14);
+        label = lbs === 0 ? `${st}st` : `${st}st ${lbs}lb`;
+      } else {
+        label = disp.single;
+      }
+      return { y: cy(v), label };
+    });
+
+    // X-axis labels (up to 4 spread across the range)
+    const xCount = Math.min(pts.length, 4);
+    const xIdxs = Array.from({length: xCount}, (_,i) => Math.round(i*(pts.length-1)/(xCount-1)));
+    const xLabels = xIdxs.map(i => ({
+      x: cx(i),
+      label: new Date(pts[i].date + 'T12:00:00').toLocaleDateString('en-GB', {day:'numeric', month:'short'})
+    }));
+
+    // Stats
+    const first = pts[0], last2 = pts[pts.length-1];
+    const totalDiff = last2.kg - first.kg;
+    const days = Math.max(1, (new Date(last2.date) - new Date(first.date)) / 86400000);
+    const perWeekKg = (totalDiff / days) * 7;
+
+    const firstDisp = kgToDisplay(first.kg);
+    const lastDisp  = kgToDisplay(last2.kg);
+
+    // per-week display — always in lbs if st_lbs for clarity
+    const u = settings.weightUnit;
+    let perWeekStr, totalDiffStr;
+    if (u === 'st_lbs' || u === 'lbs') {
+      const pw = perWeekKg * 2.20462;
+      perWeekStr = (pw > 0 ? '+' : '') + pw.toFixed(1) + 'lbs';
+      const td = totalDiff * 2.20462;
+      totalDiffStr = (td > 0 ? '▲ ' : '▼ ') + Math.abs(td).toFixed(1) + 'lbs';
+    } else {
+      perWeekStr = (perWeekKg > 0 ? '+' : '') + perWeekKg.toFixed(2) + 'kg';
+      totalDiffStr = (totalDiff > 0 ? '▲ ' : '▼ ') + Math.abs(totalDiff).toFixed(1) + 'kg';
+    }
+    const diffCol = totalDiff <= 0 ? 'var(--green)' : 'var(--red)';
+
+    // Projection
+    let projHTML = '';
+    if (settings.targetWeight != null && perWeekKg !== 0) {
+      const remaining = settings.targetWeight - last2.kg;
+      const sameDirection = (remaining < 0 && perWeekKg < 0) || (remaining > 0 && perWeekKg > 0);
+      if (sameDirection) {
+        const weeksLeft = Math.abs(remaining / perWeekKg);
+        const projDate = new Date();
+        projDate.setDate(projDate.getDate() + Math.round(weeksLeft * 7));
+        const projStr = projDate.toLocaleDateString('en-GB', {day:'numeric', month:'long'});
+        const targetDisp = kgToDisplay(settings.targetWeight);
+        projHTML = `<div class="wc-projection">At this rate you'll reach <strong>${targetDisp.single}</strong> by <strong>${projStr}</strong> (~${Math.round(weeksLeft)} weeks)</div>`;
+      }
+    }
+
+    const periods = ['2W','1M','3M','6M','All'];
+    const segBtns = periods.map(p =>
+      `<button class="seg-btn${weightChartPeriod===p?' active':''}" onclick="setWeightPeriod('${p}')">${p}</button>`
+    ).join('');
+
+    chartCard = `
+    <div class="card">
+      <div class="card-title">Weight Over Time</div>
+      <div class="seg-group" style="margin-bottom:14px">${segBtns}</div>
+      <div class="wc-stats">
+        <div class="wc-stat"><div class="wc-stat-val">${firstDisp.single}</div><div class="wc-stat-lbl">Start</div></div>
+        <div class="wc-stat"><div class="wc-stat-val">${lastDisp.single}</div><div class="wc-stat-lbl">Current</div></div>
+        <div class="wc-stat"><div class="wc-stat-val" style="color:${diffCol}">${totalDiffStr}</div><div class="wc-stat-lbl">Change</div></div>
+        <div class="wc-stat"><div class="wc-stat-val" style="color:${diffCol}">${perWeekStr}</div><div class="wc-stat-lbl">Per week</div></div>
+      </div>
+      <div class="wc-chart-area">
+        <div class="wc-y-labels">
+          ${yLabels.map(l=>`<span class="wc-y-lbl">${l.label}</span>`).join('')}
+        </div>
+        <svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible">
+          <defs>
+            <linearGradient id="wcGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          ${[0,1,2,3].map(i => {
+            const v = maxV - (i/3)*range;
+            const y = cy(v).toFixed(1);
+            return `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`;
+          }).join('')}
+          <line x1="${cx(0).toFixed(1)}" y1="${cy(trendY0).toFixed(1)}"
+                x2="${cx(n-1).toFixed(1)}" y2="${cy(trendY1).toFixed(1)}"
+                stroke="var(--accent)" stroke-width="1" stroke-dasharray="5 3" opacity="0.45"/>
+          <path d="${areaD}" fill="url(#wcGrad)"/>
+          <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          ${vals.map((v,i) => {
+            const isLast = i === vals.length - 1;
+            return `${isLast ? `<circle cx="${cx(i).toFixed(1)}" cy="${cy(v).toFixed(1)}" r="7" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.4"/>` : ''}
+            <circle cx="${cx(i).toFixed(1)}" cy="${cy(v).toFixed(1)}" r="3.5" fill="var(--accent)"/>`;
+          }).join('')}
+        </svg>
+        <div class="wc-x-labels">
+          ${xLabels.map(l=>`<span class="wc-x-lbl">${l.label}</span>`).join('')}
+        </div>
+      </div>
+      ${projHTML}
+    </div>`;
+  }
+
+  // History rows
+  const rows = [...sorted].reverse().map((w, i, arr) => {
+    const p = arr[i+1];
+    let diffStr = '';
+    if (p) {
+      const d = w.kg - p.kg;
+      const col = d > 0 ? 'var(--red)' : d < 0 ? 'var(--green)' : 'var(--text3)';
+      diffStr = `<span class="weight-row-diff" style="color:${col}">${weightDiffLabel(d)}</span>`;
+    }
+    const disp = kgToDisplay(w.kg);
+    const deleteId = w.time || w.date;
+    const timeLabel = w.time ? ` · ${fmtTime(w.time)}` : '';
+    return `<div class="weight-row">
+      <div><div class="weight-row-date">${fmtDate(w.date)}${timeLabel}</div></div>
+      <div style="display:flex;align-items:center">
+        <div class="weight-row-val">${disp.single}</div>
+        ${diffStr}
+        <button class="food-del" style="margin-left:6px" onclick="deleteWeight('${deleteId}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="card">
+    <div class="card-title">Current Weight</div>
+    <div class="weight-display">
+      ${latestDisp
+        ? `<div><span class="weight-big">${latestDisp.val}</span><span class="weight-unit">${latestDisp.unit}</span></div>${diffHTML}`
+        : `<div style="color:var(--text2);padding:12px 0">No weight logged yet</div>`}
+    </div>
+  </div>
+
+  <button class="btn btn-accent" style="width:100%;margin-bottom:12px;padding:14px" onclick="openWeightModal()">+ Log Today's Weight</button>
+
+  ${chartCard}
+
+  ${sorted.length > 0 ? `
+  <div class="section-head">Weight History</div>
+  <div class="card" style="padding:0 16px">${rows}</div>` : ''}`;
+}
+
+// HISTORY TAB
+function renderHistory() {
+  // Build list of dates — all logged dates plus any streak days with no entries
+  const loggedDates = new Set(foodLog.map(f => f.date));
+  const streakDates = new Set();
+  for (let i = 1; i <= 6; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    streakDates.add(d.toISOString().slice(0,10));
+  }
+  const allDates = [...new Set([...loggedDates, ...streakDates])].sort().reverse();
+
+  if (allDates.length === 0) return `
+    <div class="empty" style="padding-top:60px">
+      <div class="empty-icon">📊</div>
+      <div class="empty-text">No history yet</div>
+      <div class="empty-sub">Start logging food to see your history here</div>
+    </div>`;
+
+  return allDates.map(date => {
+    const items = foodLog.filter(f => f.date === date).reverse();
+    const total = items.reduce((s,f) => s + f.kcal, 0);
+    const pct = Math.min(total / settings.dailyGoal, 1);
+    const col = pct > 1 ? 'var(--red)' : pct > 0.85 ? '#f59e0b' : 'var(--green)';
+    const isFocus = date === historyFocusDate;
+    const isToday = date === todayStr();
+    const focusBorder = isFocus ? 'border-color:var(--accent);border-width:2px;' : '';
+
+    return `
+    <div class="card" id="hday-${date}" style="${focusBorder}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:${items.length ? '10px' : '0'}">
+        <div class="card-title" style="margin:0">${fmtDate(date)}${isToday ? ' <span style="color:var(--accent);font-size:10px">TODAY</span>' : ''}</div>
+        ${items.length ? `<div style="font-size:18px;font-weight:700;color:${col}">${total} kcal</div>` : `<div style="font-size:13px;color:var(--text3)">Nothing logged</div>`}
+      </div>
+      ${items.length ? `
+        <div class="prog-bar-wrap" style="margin-bottom:12px">
+          <div class="prog-bar" style="width:${Math.min(pct*100,100)}%;background:${col}"></div>
+        </div>
+        ${items.map(f => foodItemHTML(f, true)).join('')}
+      ` : ''}
+      <button class="btn btn-surface" style="width:100%;margin-top:${items.length ? '10px' : '8px'};padding:9px;font-size:13px" onclick="openFoodModalForDate('${date}')">
+        + Add food to this day
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// SETTINGS TAB
+function seg(id, options, current, onChange) {
+  return `<div class="seg-group" id="${id}">
+    ${options.map(o => `<button class="seg-btn${current===o.val?' active':''}" onclick="${onChange}('${o.val}')">${o.label}</button>`).join('')}
+  </div>`;
+}
+
+function renderSettings() {
+  const wu = settings.weightUnit || 'kg';
+  const fu = settings.foodUnit || 'g';
+  return `
+  <div class="card">
+    <div class="card-title">Profile</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Your Name</div><div class="setting-sub">Optional</div></div>
+      <input class="setting-input" id="s-name" value="${settings.name||''}" placeholder="Your name" type="text">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Units</div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div>
+        <div class="setting-label">Weight Unit</div>
+        <div class="setting-sub">How your weight is displayed and entered</div>
+      </div>
+      ${seg('seg-weight',
+        [{val:'kg',label:'kg'},{val:'st_lbs',label:'st & lbs'},{val:'lbs',label:'lbs'}],
+        wu, 'setWeightUnit')}
+    </div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div>
+        <div class="setting-label">Food Portion Unit</div>
+        <div class="setting-sub">Used when describing portions to the AI</div>
+      </div>
+      ${seg('seg-food',
+        [{val:'g',label:'grams'},{val:'oz',label:'oz'},{val:'ml',label:'ml'}],
+        fu, 'setFoodUnit')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Calories</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Daily Goal</div><div class="setting-sub">Target calories per day</div></div>
+      <input class="setting-input" id="s-goal" value="${settings.dailyGoal}" type="number" min="500" max="9999">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Weight Goal</div>
+    <div class="setting-row" style="border-bottom:none">
+      <div><div class="setting-label">Target Weight</div><div class="setting-sub">Used for progress projection</div></div>
+      ${(() => {
+        const u = settings.weightUnit || 'kg';
+        if (u === 'kg') {
+          const v = settings.targetWeight ? settings.targetWeight.toFixed(1) : '';
+          return `<div style="display:flex;align-items:center;gap:6px">
+            <input class="setting-input" id="s-target-w1" value="${v}" placeholder="e.g. 75.0" type="number" step="0.1" style="width:90px">
+            <span style="font-size:13px;color:var(--text2)">kg</span>
+          </div>`;
+        } else if (u === 'lbs') {
+          const v = settings.targetWeight ? (settings.targetWeight * 2.20462).toFixed(1) : '';
+          return `<div style="display:flex;align-items:center;gap:6px">
+            <input class="setting-input" id="s-target-w1" value="${v}" placeholder="e.g. 154" type="number" step="0.5" style="width:90px">
+            <span style="font-size:13px;color:var(--text2)">lbs</span>
+          </div>`;
+        } else {
+          const _twLbs = settings.targetWeight ? settings.targetWeight * 2.20462 : null;
+          const st = _twLbs != null ? Math.floor(_twLbs / 14) : '';
+          const lb = _twLbs != null ? Math.round(_twLbs % 14) : '';
+          return `<div style="display:flex;align-items:center;gap:4px">
+            <input class="setting-input" id="s-target-w1" value="${st}" placeholder="11" type="number" step="1" style="width:60px">
+            <span style="font-size:13px;color:var(--text2)">st</span>
+            <input class="setting-input" id="s-target-w2" value="${lb}" placeholder="0" type="number" step="0.5" style="width:60px">
+            <span style="font-size:13px;color:var(--text2)">lbs</span>
+          </div>`;
+        }
+      })()}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Macro Targets</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">
+      Gram targets are calculated from your daily calorie goal. Protein &amp; carbs = 4 kcal/g, fat = 9 kcal/g.
+    </div>
+
+    ${['protein','carbs','fat'].map(macro => {
+      const pctKey = macro + 'Pct';
+      const pct = settings.macroSplit[pctKey];
+      const kcal = settings.dailyGoal || 2500;
+      const grams = macro === 'fat'
+        ? Math.round((kcal * pct / 100) / 9)
+        : Math.round((kcal * pct / 100) / 4);
+      const colour = macro === 'protein' ? '#60a5fa' : macro === 'carbs' ? '#fb923c' : '#facc15';
+      const label = macro.charAt(0).toUpperCase() + macro.slice(1);
+      return `<div class="setting-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div class="setting-label" style="color:${colour}">${label}</div>
+          <div style="font-size:13px;color:var(--text2)" id="ms-label-${macro}">${pct}% · ${grams}g / day</div>
+        </div>
+        <input type="range" min="10" max="70" step="1" value="${pct}"
+          id="ms-${macro}"
+          oninput="onMacroSlider('${macro}')"
+          style="width:100%;accent-color:${colour}">
+      </div>`;
+    }).join('')}
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 4px;border-top:1px solid var(--border);margin-top:4px">
+      <div style="font-size:13px;color:var(--text2)" id="ms-total-label">Total: ${settings.macroSplit.proteinPct + settings.macroSplit.carbsPct + settings.macroSplit.fatPct}%</div>
+      <button class="btn btn-surface" style="padding:6px 14px;font-size:13px" onclick="resetMacroSplit()">↺ Reset to default</button>
+    </div>
+
+    <div class="setting-row">
+      <div><div class="setting-label" style="color:#4ade80">Fibre target</div><div class="setting-sub">NHS recommends 30g/day</div></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input class="setting-input" id="ms-fibre" value="${settings.macroSplit.fibreG}" type="number" min="0" max="100" style="width:70px">
+        <span style="font-size:13px;color:var(--text2)">g</span>
+      </div>
+    </div>
+    <div class="setting-row" style="border-bottom:none">
+      <div><div class="setting-label" style="color:#f87171">Sugar target</div><div class="setting-sub">NHS recommends max 30g/day</div></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input class="setting-input" id="ms-sugar" value="${settings.macroSplit.sugarG}" type="number" min="0" max="200" style="width:70px">
+        <span style="font-size:13px;color:var(--text2)">g</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleApiKeySection()">
+      <div>
+        <div class="card-title" style="margin-bottom:0">OpenAI API Key</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px" id="apiKeyStatus">
+          ${settings.apiKey ? '🔑 Key saved' : '⚠️ Not set'}
+        </div>
+      </div>
+      <div id="apiKeyChevron" style="font-size:18px;color:var(--text3);transition:transform 0.2s">▼</div>
+    </div>
+    <div id="apiKeySection" style="display:none;margin-top:14px">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.5">
+        Required for AI food photo analysis and search.<br>
+        Get yours at <strong>platform.openai.com</strong> → API keys.
+      </div>
+      <input class="setting-input" id="s-apikey" value="${settings.apiKey||''}"
+        placeholder="sk-..." type="password" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" style="width:100%;text-align:left">
+      <div style="margin-top:8px;font-size:12px;color:var(--text3)">
+        Stored locally on this device only and never shared.
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-accent" style="width:100%;padding:14px;margin-bottom:12px" onclick="saveSettings()">
+    Save Settings
+  </button>
+
+  <div class="card" style="border-color:rgba(239,68,68,0.3)">
+    <div class="card-title" style="color:var(--red)">Danger Zone</div>
+    <button class="btn" style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);width:100%;padding:12px;margin-bottom:8px" onclick="clearToday()">
+      Clear Today's Log
+    </button>
+    <button class="btn" style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);width:100%;padding:12px" onclick="clearAll()">
+      Reset All Data
+    </button>
+  </div>
+
+  <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
+    DailyFuel v1.0 · All data stored on device
+  </div>`;
+}
+
+function onMacroSlider(changed) {
+  const keys = ['protein','carbs','fat'];
+  const vals = {};
+  keys.forEach(k => { vals[k] = parseInt(document.getElementById('ms-'+k)?.value) || 0; });
+
+  // Clamp changed value, distribute remainder equally among the other two
+  const others = keys.filter(k => k !== changed);
+  let remainder = 100 - vals[changed];
+  if (remainder < 20) { vals[changed] = 80; remainder = 20; }
+
+  // Proportional redistribution of remainder across the other two
+  const otherTotal = others.reduce((s, k) => s + vals[k], 0);
+  if (otherTotal > 0) {
+    others.forEach(k => {
+      vals[k] = Math.round((vals[k] / otherTotal) * remainder);
+    });
+  } else {
+    others.forEach(k => vals[k] = Math.round(remainder / 2));
+  }
+  // Fix rounding drift so total is exactly 100
+  const total = keys.reduce((s,k) => s + vals[k], 0);
+  vals[others[0]] += 100 - total;
+
+  // Clamp each to minimum 10
+  keys.forEach(k => { vals[k] = Math.max(10, vals[k]); });
+
+  // Update sliders and labels
+  const kcal = parseInt(document.getElementById('s-goal')?.value) || settings.dailyGoal || 2500;
+  keys.forEach(k => {
+    const el = document.getElementById('ms-'+k);
+    if (el) el.value = vals[k];
+    const grams = k === 'fat' ? Math.round((kcal * vals[k] / 100) / 9) : Math.round((kcal * vals[k] / 100) / 4);
+    const lbl = document.getElementById('ms-label-'+k);
+    if (lbl) lbl.textContent = `${vals[k]}% · ${grams}g / day`;
+  });
+  const totalEl = document.getElementById('ms-total-label');
+  if (totalEl) totalEl.textContent = `Total: ${keys.reduce((s,k)=>s+vals[k],0)}%`;
+}
+
+function resetMacroSplit() {
+  const d = DEFAULT_MACRO_SPLIT;
+  settings.macroSplit = { ...d };
+  save();
+  renderContent(); // re-render settings with reset values
+  showToast('Macro split reset to default');
+}
+
+function toggleApiKeySection() {
+  const section = document.getElementById('apiKeySection');
+  const chevron = document.getElementById('apiKeyChevron');
+  if (!section) return;
+  const open = section.style.display === 'none';
+  section.style.display = open ? 'block' : 'none';
+  chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+function setWeightUnit(val) {
+  settings.weightUnit = val;
+  save();
+  renderContent(); // re-render settings with new active state
+}
+function setFoodUnit(val) {
+  settings.foodUnit = val;
+  save();
+  renderContent();
+}
+
+function bindSettings() {
+  // inputs auto-save on blur
+  ['s-name','s-goal','s-apikey'].forEach(id => {
+    document.getElementById(id)?.addEventListener('blur', () => {});
+  });
+}
+function bindWeightChart() {}
+
+// ── FOOD MODAL ───────────────────────────────────────────────────────────────
+let pendingFood = null;
+let capturedImageB64 = null;
+let currentFoodMode = 'photo';  // 'photo' | 'search' | 'manual'
+let searchDebounceTimer = null;
+
+// Build recents: unique foods most-recently logged, up to 200
+function getRecentFoods() {
+  const seen = new Set();
+  const recents = [];
+  for (let i = foodLog.length - 1; i >= 0; i--) {
+    const f = foodLog[i];
+    const key = f.name.toLowerCase().trim();
+    if (!seen.has(key)) {
+      seen.add(key);
+      recents.push(f);
+      if (recents.length >= 200) break;
+    }
+  }
+  return recents;
+}
+
+function filterRecentFoods(query) {
+  const all = getRecentFoods();
+  if (!query) return all.slice(0, 8); // show 8 by default
+  const q = query.toLowerCase().trim();
+  return all.filter(f => f.name.toLowerCase().includes(q));
+}
+
+function renderRecents(query='') {
+  const all = getRecentFoods();
+  const section = document.getElementById('recentsSection');
+  const strip = document.getElementById('recentsStrip');
+  if (!all.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  const filtered = filterRecentFoods(query);
+  if (!filtered.length) {
+    strip.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:8px 0">No matches in history</div>`;
+    return;
+  }
+  strip.innerHTML = filtered.map(f => `
+    <div class="recent-chip" onclick="useRecentFood(${JSON.stringify(f).replace(/"/g,'&quot;')})">
+      <div class="recent-chip-name">${f.name}</div>
+      <div class="recent-chip-kcal">${f.kcal} kcal</div>
+    </div>`).join('');
+}
+
+function useRecentFood(f) {
+  fillForm(f);
+  document.getElementById('manualBox').style.display = 'block';
+  document.getElementById('manualBoxLabel').textContent = '✅ Loaded from Recents — edit if needed';
+  // Switch to manual view so the form is prominent
+  setFoodMode('manual');
+  // Scroll to form
+  setTimeout(() => {
+    document.getElementById('manualBox').scrollIntoView({behavior:'smooth', block:'start'});
+  }, 100);
+}
+
+// ── CUSTOM MEALS ─────────────────────────────────────────────────────────────
+let customMeals = STORAGE.get('df_meals', []); // [{id, name, kcal, protein, carbs, fat, fibre, sugar, ingredients:[]}]
+let mealBuilderIngredients = []; // [{name, kcal, protein, carbs, fat, fibre, sugar, grams}]
+let mealIngredientDebounce = null;
+
+function saveMealsStore() { STORAGE.set('df_meals', customMeals); }
+
+function renderMealList(query='') {
+  const el = document.getElementById('mealListResults');
+  if (!el) return;
+  const q = (query||'').toLowerCase().trim();
+  const filtered = q ? customMeals.filter(m => m.name.toLowerCase().includes(q)) : customMeals;
+  if (!filtered.length) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:12px 0;text-align:center">${customMeals.length ? 'No meals match your search' : 'No saved meals yet — build one below!'}</div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(m => `
+    <div class="search-result-item" style="margin-bottom:8px;align-items:flex-start">
+      <div style="flex:1" onclick="selectMeal('${m.id}')">
+        <div class="search-result-name">${m.name}</div>
+        <div class="search-result-meta">P${(m.protein||0).toFixed(0)}g · C${(m.carbs||0).toFixed(0)}g · F${(m.fat||0).toFixed(0)}g</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="search-result-kcal" onclick="selectMeal('${m.id}')">${m.kcal}<span style="font-size:11px;color:var(--text2)"> kcal</span></div>
+        <button class="food-del" onclick="deleteMeal('${m.id}')" title="Delete meal" style="font-size:15px;opacity:0.6">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function selectMeal(id) {
+  const m = customMeals.find(x => x.id === id);
+  if (!m) return;
+  fillForm(m);
+  document.getElementById('manualBox').style.display = 'block';
+  document.getElementById('manualBoxLabel').textContent = `🍱 ${m.name} — edit if needed`;
+  setFoodMode('manual');
+}
+
+function deleteMeal(id) {
+  if (!confirm('Delete this saved meal?')) return;
+  customMeals = customMeals.filter(m => m.id !== id);
+  saveMealsStore();
+  renderMealList(document.getElementById('mealSearchInput')?.value || '');
+}
+
+function startBuildMeal() {
+  mealBuilderIngredients = [];
+  document.getElementById('mealNameInput').value = '';
+  document.getElementById('mealIngredientSearch').value = '';
+  document.getElementById('mealIngredientResults').innerHTML = '';
+  renderMealIngredientList();
+  document.getElementById('mealListView').style.display = 'none';
+  document.getElementById('mealBuilderView').style.display = 'block';
+}
+
+function onMealIngredientInput() {
+  clearTimeout(mealIngredientDebounce);
+  const q = document.getElementById('mealIngredientSearch').value.trim();
+  if (!q) { document.getElementById('mealIngredientResults').innerHTML = ''; return; }
+  // First check history
+  const histMatches = filterRecentFoods(q).slice(0, 4);
+  let html = histMatches.length ? histMatches.map(f => `
+    <div class="search-result-item" style="margin-bottom:6px" onclick="addMealIngredient(${JSON.stringify(f).replace(/"/g,'&quot;')})">
+      <div><div class="search-result-name">${f.name}</div><div class="search-result-meta">from history</div></div>
+      <div class="search-result-kcal">${f.kcal}<span style="font-size:11px;color:var(--text2)"> kcal</span></div>
+    </div>`).join('') : '';
+  document.getElementById('mealIngredientResults').innerHTML = html || `<div style="color:var(--text3);font-size:12px;padding:4px 0">No history matches — searching online…</div>`;
+  if (settings.apiKey) {
+    mealIngredientDebounce = setTimeout(() => doMealIngredientSearch(q), 700);
+  }
+}
+
+async function doMealIngredientSearch(query) {
+  if (!settings.apiKey) return;
+  try {
+    const unit = foodUnitLabel();
+    const prompt = `UK nutrition database. User searched: "${query}". Return 4 options as JSON array only:
+[{"name":"food name","portion":"${unit}","kcal":number,"protein":number,"carbs":number,"fat":number,"fibre":number,"sugar":number}]`;
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` },
+      body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const results = JSON.parse(data.choices[0].message.content.trim().replace(/```json|```/g,'').trim());
+    const el = document.getElementById('mealIngredientResults');
+    if (!el) return;
+    el.innerHTML = results.map(r => `
+      <div class="search-result-item" style="margin-bottom:6px" onclick="addMealIngredient(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+        <div><div class="search-result-name">${r.name}</div><div class="search-result-meta">${r.portion} · P${r.protein}g C${r.carbs}g F${r.fat}g</div></div>
+        <div class="search-result-kcal">${r.kcal}<span style="font-size:11px;color:var(--text2)"> kcal</span></div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+function addMealIngredient(f) {
+  mealBuilderIngredients.push({ name: f.name, kcal: f.kcal, protein: f.protein||0, carbs: f.carbs||0, fat: f.fat||0, fibre: f.fibre||0, sugar: f.sugar||0 });
+  document.getElementById('mealIngredientSearch').value = '';
+  document.getElementById('mealIngredientResults').innerHTML = '';
+  renderMealIngredientList();
+}
+
+function removeMealIngredient(idx) {
+  mealBuilderIngredients.splice(idx, 1);
+  renderMealIngredientList();
+}
+
+function renderMealIngredientList() {
+  const el = document.getElementById('mealIngredientList');
+  const totEl = document.getElementById('mealTotalsRow');
+  if (!el) return;
+  if (!mealBuilderIngredients.length) { el.innerHTML = ''; totEl.style.display = 'none'; return; }
+  el.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Ingredients (${mealBuilderIngredients.length})</div>` +
+    mealBuilderIngredients.map((ing, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:14px">${ing.name}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:13px;color:var(--accent);font-weight:600">${ing.kcal} kcal</div>
+        <button class="food-del" onclick="removeMealIngredient(${i})" style="font-size:14px;opacity:0.6">✕</button>
+      </div>
+    </div>`).join('');
+  const totals = mealBuilderIngredients.reduce((acc, ing) => {
+    acc.kcal += ing.kcal; acc.protein += ing.protein; acc.carbs += ing.carbs;
+    acc.fat += ing.fat; acc.fibre += ing.fibre; acc.sugar += ing.sugar; return acc;
+  }, { kcal:0, protein:0, carbs:0, fat:0, fibre:0, sugar:0 });
+  totEl.style.display = 'block';
+  totEl.innerHTML = `<strong style="color:var(--text)">Total: ${totals.kcal} kcal</strong> · P${totals.protein.toFixed(1)}g · C${totals.carbs.toFixed(1)}g · F${totals.fat.toFixed(1)}g`;
+}
+
+function saveMeal() {
+  const name = document.getElementById('mealNameInput').value.trim();
+  if (!name) { showToast('Please enter a meal name'); return; }
+  if (!mealBuilderIngredients.length) { showToast('Add at least one ingredient'); return; }
+  const totals = mealBuilderIngredients.reduce((acc, ing) => {
+    acc.kcal += ing.kcal; acc.protein += ing.protein; acc.carbs += ing.carbs;
+    acc.fat += ing.fat; acc.fibre += ing.fibre; acc.sugar += ing.sugar; return acc;
+  }, { kcal:0, protein:0, carbs:0, fat:0, fibre:0, sugar:0 });
+  const meal = {
+    id: uid(), name,
+    kcal: Math.round(totals.kcal),
+    protein: parseFloat(totals.protein.toFixed(1)),
+    carbs:   parseFloat(totals.carbs.toFixed(1)),
+    fat:     parseFloat(totals.fat.toFixed(1)),
+    fibre:   parseFloat(totals.fibre.toFixed(1)),
+    sugar:   parseFloat(totals.sugar.toFixed(1)),
+    portion: `${mealBuilderIngredients.length} ingredients`,
+    ingredients: [...mealBuilderIngredients],
+  };
+  customMeals.unshift(meal);
+  saveMealsStore();
+  showToast(`Meal saved: ${name}`);
+  selectMeal(meal.id);
+}
+
+function setFoodMode(mode) {
+  currentFoodMode = mode;
+  // Update buttons
+  ['photo','search','meal','manual'].forEach(m => {
+    document.getElementById('modeBtn-'+m)?.classList.toggle('active', m === mode);
+  });
+  // Show/hide panels
+  document.getElementById('photoModeBox').style.display  = mode === 'photo'  ? 'block' : 'none';
+  document.getElementById('searchModeBox').style.display = mode === 'search' ? 'block' : 'none';
+  document.getElementById('mealModeBox').style.display   = mode === 'meal'   ? 'block' : 'none';
+
+  if (mode === 'meal') {
+    renderMealList();
+    document.getElementById('mealListView').style.display = 'block';
+    document.getElementById('mealBuilderView').style.display = 'none';
+  }
+
+  if (mode === 'manual') {
+    document.getElementById('manualBox').style.display = 'block';
+    document.getElementById('manualBoxLabel').textContent = 'Enter Details';
+  } else if (mode === 'photo') {
+    // manualBox shown after AI result
+  } else if (mode === 'search') {
+    document.getElementById('manualBox').style.display = 'none';
+    setTimeout(() => document.getElementById('searchInput')?.focus(), 200);
+  } else if (mode === 'meal') {
+    document.getElementById('manualBox').style.display = 'none';
+  }
+}
+
+let editingId = null;   // null = new entry, string = id of entry being edited
+
+function openFoodModalForDate(date) {
+  openFoodModal();
+  logFoodForDate = date;  // set AFTER openFoodModal (which resets it to null)
+  if (date !== todayStr()) {
+    document.getElementById('foodModalTitle').textContent = `Log Food — ${fmtDate(date)}`;
+  }
+}
+
+function openFoodModal() {
+  editingId = null;
+  logFoodForDate = null;
+  pendingFood = null;
+  capturedImageB64 = null;
+  document.getElementById('foodModalTitle').textContent = 'Log Food';
+  document.getElementById('logBtn').textContent = 'Log Food';
+  document.getElementById('deleteEntryRow').style.display = 'none';
+  document.getElementById('cameraArea').innerHTML = `
+    <div class="camera-placeholder">
+      <div class="cam-icon">📷</div>
+      <div>Tap to take a photo</div>
+      <div style="font-size:12px;margin-top:4px;color:var(--text3)">or choose from library</div>
+    </div>`;
+  document.getElementById('cameraArea').onclick = () => document.getElementById('fileInput').click();
+  document.getElementById('fileInput').value = '';
+  document.getElementById('analyzingBox').style.display = 'none';
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('searchResults').innerHTML = '<div class="search-hint">Type a food name to search.<br>e.g. <em>"2 scrambled eggs"</em> or <em>"large latte"</em></div>';
+  document.getElementById('searchInput').value = '';
+  ['fName','fPortion','fKcal','fProtein','fCarbs','fFat','fFibre','fSugar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  setFoodMode('photo');
+  document.getElementById('manualBox').style.display = 'none';
+  const rsi = document.getElementById('recentsSearchInput');
+  if (rsi) rsi.value = '';
+  renderRecents();
+  document.getElementById('foodModal').classList.add('open');
+  document.getElementById('foodModalScroll').scrollTop = 0;
+}
+
+function openEditModal(id) {
+  const f = foodLog.find(x => x.id === id);
+  if (!f) return;
+  editingId = id;
+  logFoodForDate = null;
+  pendingFood = null;
+  capturedImageB64 = f.thumb || null;
+
+  document.getElementById('foodModalTitle').textContent = 'Edit Entry';
+  document.getElementById('logBtn').textContent = 'Save Changes';
+  document.getElementById('deleteEntryRow').style.display = 'block';
+
+  // Show existing photo or placeholder
+  if (f.thumb) {
+    document.getElementById('cameraArea').innerHTML = `<img src="${f.thumb}" alt="food">`;
+  } else {
+    document.getElementById('cameraArea').innerHTML = `
+      <div class="camera-placeholder">
+        <div class="cam-icon">📷</div>
+        <div>Tap to change photo</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--text3)">or choose from library</div>
+      </div>`;
+  }
+  document.getElementById('cameraArea').onclick = () => document.getElementById('fileInput').click();
+  document.getElementById('fileInput').value = '';
+  document.getElementById('analyzingBox').style.display = 'none';
+  document.getElementById('resultBox').style.display = 'none';
+
+  fillForm(f);
+  // Skip mode switcher — go straight to manual form
+  setFoodMode('manual');
+  document.getElementById('manualBox').style.display = 'block';
+  document.getElementById('foodModal').classList.add('open');
+  document.getElementById('foodModalScroll').scrollTop = 0;
+}
+
+function deleteEditingEntry() {
+  if (!editingId) return;
+  const f = foodLog.find(x => x.id === editingId);
+  if (!f) return;
+  if (!confirm(`Delete "${f.name}"?`)) return;
+  foodLog = foodLog.filter(x => x.id !== editingId);
+  save();
+  closeFoodModal();
+  showToast('Entry deleted');
+  renderContent();
+}
+
+function closeFoodModal() {
+  document.getElementById('foodModal').classList.remove('open');
+  editingId = null;
+  logFoodForDate = null;
+  document.getElementById('foodModalTitle').textContent = 'Log Food';
+}
+
+// ── SEARCH MODE ───────────────────────────────────────────────────────────────
+let lastSearchQuery = '';
+let searchSeenNames = new Set();
+
+function onSearchInput() {
+  clearTimeout(searchDebounceTimer);
+  searchSeenNames = new Set(); // reset seen names on new query
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) {
+    document.getElementById('searchResults').innerHTML = '<div class="search-hint">Type a food name to search.<br>e.g. <em>"2 scrambled eggs"</em> or <em>"large latte"</em></div>';
+    return;
+  }
+  searchDebounceTimer = setTimeout(() => doFoodSearch(q), 600);
+}
+
+async function doFoodSearch(query, isMore=false) {
+  if (!settings.apiKey) {
+    document.getElementById('searchResults').innerHTML = `
+      <div class="search-empty">
+        <div style="font-size:32px;margin-bottom:8px">🔑</div>
+        <div style="font-weight:600;margin-bottom:4px">API key needed</div>
+        <div style="font-size:12px;color:var(--text3)">Add your OpenAI key in Settings to use food search.</div>
+      </div>`;
+    return;
+  }
+
+  lastSearchQuery = query;
+  const container = document.getElementById('searchResults');
+
+  if (!isMore) {
+    document.getElementById('searchSpinner').style.display = 'flex';
+    container.innerHTML = '';
+  } else {
+    // Remove the "Show more" button before appending new results
+    const moreBtn = document.getElementById('searchMoreBtn');
+    if (moreBtn) moreBtn.remove();
+    // Add an inline spinner at the bottom
+    const inlineSpinner = document.createElement('div');
+    inlineSpinner.id = 'searchMoreSpinner';
+    inlineSpinner.className = 'analyzing';
+    inlineSpinner.style.padding = '12px 0';
+    inlineSpinner.innerHTML = '<div class="spinner"></div><div>Loading more…</div>';
+    container.appendChild(inlineSpinner);
+  }
+
+  try {
+    const unit = foodUnitLabel();
+    const excludeClause = searchSeenNames.size
+      ? `\nDo NOT repeat any of these already-shown options: ${[...searchSeenNames].join(', ')}.`
+      : '';
+    const prompt = `You are a UK nutrition database for a user based in Great Britain. The user searched for: "${query}"
+Return 8-10 realistic food options matching this query (different portion sizes / preparations / brands are fine).${excludeClause}
+Important: Use British English throughout — crisps not chips, biscuits not cookies, courgette not zucchini, aubergine not eggplant, etc. Use UK brand names and UK supermarket products where relevant (e.g. Tesco, Sainsbury's, Walkers, Warburtons). Use metric portions (g, ml) by default unless the food is naturally measured otherwise.
+Reply ONLY with a JSON array, no markdown, no extra text:
+[{"name":"food name","portion":"portion size in ${unit}","kcal":number,"protein":number,"carbs":number,"fat":number,"fibre":number,"sugar":number},...]
+All number fields must be numbers. Be accurate. Vary portions sensibly.`;
+
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || 'API error'); }
+    const data = await resp.json();
+    const text = data.choices[0].message.content.trim();
+    const results = JSON.parse(text.replace(/```json|```/g,'').trim());
+
+    document.getElementById('searchSpinner').style.display = 'none';
+    document.getElementById('searchMoreSpinner')?.remove();
+
+    if (!results.length) {
+      if (!isMore) container.innerHTML = `<div class="search-empty">No results found — try a different search term.</div>`;
+      return;
+    }
+
+    // Track existing result count for unique IDs
+    const existingCount = container.querySelectorAll('.search-result-item').length;
+
+    // Add results to seen set and render
+    results.forEach((r, i) => {
+      searchSeenNames.add(r.name);
+      const idx = existingCount + i;
+      const div = document.createElement('div');
+      div.className = 'search-result-item';
+      div.id = `sr-${idx}`;
+      div.dataset.result = JSON.stringify(r);
+      div.onclick = () => selectSearchResult(idx);
+      div.innerHTML = `
+        <div>
+          <div class="search-result-name">${r.name}</div>
+          <div class="search-result-meta">${r.portion} · P${r.protein}g · C${r.carbs}g · F${r.fat}g</div>
+        </div>
+        <div class="search-result-kcal">${r.kcal}<span style="font-size:11px;color:var(--text2)"> kcal</span></div>`;
+      container.appendChild(div);
+    });
+
+    // Add "Show more" button
+    const moreBtn = document.createElement('button');
+    moreBtn.id = 'searchMoreBtn';
+    moreBtn.className = 'btn btn-surface';
+    moreBtn.style.cssText = 'width:100%;margin-top:10px;padding:11px;font-size:14px';
+    moreBtn.textContent = '🔄 Show more options';
+    moreBtn.onclick = () => doFoodSearch(lastSearchQuery, true);
+    container.appendChild(moreBtn);
+
+  } catch(err) {
+    document.getElementById('searchSpinner').style.display = 'none';
+    document.getElementById('searchMoreSpinner')?.remove();
+    if (!isMore) {
+      container.innerHTML = `
+        <div style="color:var(--red);font-size:13px;padding:12px;background:rgba(239,68,68,0.1);border-radius:8px">
+          ⚠️ Search failed: ${err.message}
+        </div>`;
+    } else {
+      showToast('Failed to load more results');
+    }
+  }
+}
+
+function selectSearchResult(i) {
+  const el = document.getElementById('sr-'+i);
+  if (!el) return;
+  const r = JSON.parse(el.dataset.result);
+  fillForm(r);
+  document.getElementById('manualBox').style.display = 'block';
+  document.getElementById('manualBoxLabel').textContent = '✅ Found — edit if needed';
+  // Scroll down to the form
+  setTimeout(() => {
+    document.getElementById('manualBox').scrollIntoView({behavior:'smooth', block:'start'});
+  }, 100);
+}
+
+function onImageSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    capturedImageB64 = dataUrl;
+
+    // Show preview
+    document.getElementById('cameraArea').innerHTML = `<img src="${dataUrl}" alt="food">`;
+    document.getElementById('cameraArea').onclick = () => document.getElementById('fileInput').click();
+
+    // If API key present, analyze
+    if (settings.apiKey) {
+      analyzeImage(dataUrl);
+    } else {
+      showToast('Add OpenAI API key in Settings for AI analysis');
+      document.getElementById('manualBox').style.display = 'block';
+      document.getElementById('manualBoxLabel').textContent = 'Enter Details';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function fillForm(j) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+  set('fName',    j.name);
+  set('fPortion', j.portion);
+  set('fKcal',    j.kcal);
+  set('fProtein', j.protein);
+  set('fCarbs',   j.carbs);
+  set('fFat',     j.fat);
+  set('fFibre',   j.fibre);
+  set('fSugar',   j.sugar);
+}
+
+async function analyzeImage(dataUrl) {
+  document.getElementById('analyzingBox').style.display = 'flex';
+  document.getElementById('resultBox').style.display = 'none';
+
+  try {
+    const base64 = dataUrl.split(',')[1];
+    const unit = foodUnitLabel();
+    const prompt = `Analyse this food image carefully. Identify what the food is and estimate its nutritional content for the visible portion. Describe portion size using ${unit}. Reply ONLY with valid JSON in exactly this format, no markdown, no extra text:
+{"name":"food name","portion":"portion description in ${unit}","kcal":number,"protein":number,"carbs":number,"fat":number,"fibre":number,"sugar":number,"note":"brief confidence note"}
+All number fields must be numbers (not strings). Use your best estimate — do not leave fields null.`;
+
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}`, detail: 'high' } }
+          ]
+        }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error?.message || 'API error');
+    }
+
+    const data = await resp.json();
+    const text = data.choices[0].message.content.trim();
+    const json = JSON.parse(text.replace(/```json|```/g,'').trim());
+
+    document.getElementById('analyzingBox').style.display = 'none';
+    document.getElementById('resultBox').style.display = 'block';
+    document.getElementById('resultBox').innerHTML = `
+      <div class="result-box" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <div class="result-food-name">${json.name}</div>
+          <div><span class="result-kcal">${json.kcal}</span><span style="color:var(--text2);font-size:13px"> kcal</span></div>
+        </div>
+        <div class="food-macros" style="margin-bottom:6px">
+          <span class="macro-chip p">Protein ${json.protein}g</span>
+          <span class="macro-chip c">Carbs ${json.carbs}g</span>
+          <span class="macro-chip f">Fat ${json.fat}g</span>
+          <span class="macro-chip fi">Fibre ${json.fibre}g</span>
+          <span class="macro-chip s">Sugar ${json.sugar}g</span>
+        </div>
+        <div class="result-note">ℹ️ ${json.note}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Review &amp; edit the values below before logging:</div>`;
+
+    fillForm(json);
+    document.getElementById('manualBox').style.display = 'block';
+    document.getElementById('manualBoxLabel').textContent = '✅ AI result — edit if needed';
+
+  } catch(err) {
+    document.getElementById('analyzingBox').style.display = 'none';
+    document.getElementById('resultBox').style.display = 'block';
+    document.getElementById('resultBox').innerHTML = `
+      <div style="color:var(--red);font-size:13px;margin-bottom:12px;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px">
+        ⚠️ AI analysis failed: ${err.message}<br>Enter your food details manually below.
+      </div>`;
+    document.getElementById('manualBox').style.display = 'block';
+    document.getElementById('manualBoxLabel').textContent = 'Enter Details';
+  }
+}
+
+function compressImage(dataUrl, maxSize=80, quality=0.5) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ratio = Math.min(maxSize / img.width, maxSize / img.height);
+      canvas.width  = Math.round(img.width  * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
+async function logFood() {
+  const name    = document.getElementById('fName')?.value?.trim();
+  const kcalRaw = document.getElementById('fKcal')?.value;
+  const kcal    = parseInt(kcalRaw);
+
+  if (!name)                              { showToast('Please enter a food name'); return; }
+  if (!kcalRaw || isNaN(kcal) || kcal<=0){ showToast('Please enter valid calories'); return; }
+
+  const num = (id) => { const v = parseFloat(document.getElementById(id)?.value); return isNaN(v) ? null : parseFloat(v.toFixed(1)); };
+  const portionLabel = document.getElementById('fPortion')?.value?.trim() || null;
+  const basePortion = parsePortion(portionLabel);
+
+  const baseMacros = basePortion ? {
+    kcal,
+    protein: num('fProtein'),
+    carbs:   num('fCarbs'),
+    fat:     num('fFat'),
+    fibre:   num('fFibre'),
+    sugar:   num('fSugar'),
+  } : null;
+
+  if (editingId) {
+    // Update existing entry
+    const idx = foodLog.findIndex(x => x.id === editingId);
+    if (idx !== -1) {
+      const existing = foodLog[idx];
+      const thumb = capturedImageB64 && capturedImageB64 !== existing.thumb
+        ? await compressImage(capturedImageB64, 80, 0.5)
+        : existing.thumb;
+      foodLog[idx] = {
+        ...existing,
+        name,
+        portion:        portionLabel,
+        basePortion:    basePortion || existing.basePortion || null,
+        currentPortion: basePortion || existing.currentPortion || null,
+        baseMacros:     baseMacros || existing.baseMacros || null,
+        kcal,
+        protein:        num('fProtein'),
+        carbs:          num('fCarbs'),
+        fat:            num('fFat'),
+        fibre:          num('fFibre'),
+        sugar:          num('fSugar'),
+        thumb,
+      };
+    }
+    save();
+    closeFoodModal();
+    showToast(`Updated: ${name} · ${kcal} kcal`);
+    renderContent();
+  } else {
+    // Compress photo to tiny thumbnail before storing
+    const thumb = capturedImageB64 ? await compressImage(capturedImageB64, 80, 0.5) : null;
+
+    const entry = {
+      id:             uid(),
+      date:           logFoodForDate || todayStr(),
+      time:           new Date().toISOString(),
+      name,
+      portion:        portionLabel,
+      basePortion:    basePortion || null,
+      currentPortion: basePortion || null,
+      baseMacros,
+      kcal,
+      protein:        num('fProtein'),
+      carbs:          num('fCarbs'),
+      fat:            num('fFat'),
+      fibre:          num('fFibre'),
+      sugar:          num('fSugar'),
+      thumb,
+    };
+
+    const wasForPastDate = logFoodForDate && logFoodForDate !== todayStr();
+    const returnToDate = logFoodForDate;
+    foodLog.push(entry);
+    save();
+    closeFoodModal();
+    showToast(`Logged: ${name} · ${kcal} kcal`);
+    if (wasForPastDate) {
+      jumpToHistoryDate(returnToDate);
+    } else {
+      renderContent();
+    }
+  }
+}
+
+function deleteFood(id) {
+  foodLog = foodLog.filter(f=>f.id !== id);
+  save();
+  renderContent();
+}
+
+// ── PORTION SCALING ──────────────────────────────────────────────────────────
+// Extract a number from a portion label like "150g", "2 cups (480ml)", "1 large (200g)"
+// Returns null if no number found or value is implausible (>5000 or <=0)
+function parsePortion(label) {
+  if (!label) return null;
+  // Prefer a number followed by g/ml/oz
+  const unitMatch = label.match(/(\d+(?:\.\d+)?)\s*(?:g|ml|oz)/i);
+  if (unitMatch) {
+    const v = parseFloat(unitMatch[1]);
+    return (v > 0 && v <= 5000) ? v : null;
+  }
+  // Fall back to the first number in the string
+  const numMatch = label.match(/(\d+(?:\.\d+)?)/);
+  if (numMatch) {
+    const v = parseFloat(numMatch[1]);
+    return (v > 0 && v <= 5000) ? v : null;
+  }
+  return null;
+}
+
+function updatePortion(id, rawVal) {
+  const idx = foodLog.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const item = foodLog[idx];
+  if (!item.baseMacros || !item.basePortion) return;
+
+  const newGrams = parseFloat(rawVal);
+  if (isNaN(newGrams) || newGrams <= 0) return;
+
+  const mult = item.portionMultiplier != null ? item.portionMultiplier : 1;
+  const ratio = (newGrams / item.basePortion) * mult;
+  const scale = (v) => v != null ? parseFloat((v * ratio).toFixed(1)) : null;
+
+  foodLog[idx] = {
+    ...item,
+    currentPortion: newGrams,
+    portion: `${newGrams}${foodUnitLabel()} × ${mult}`,
+    kcal:    Math.round(item.baseMacros.kcal * ratio),
+    protein: scale(item.baseMacros.protein),
+    carbs:   scale(item.baseMacros.carbs),
+    fat:     scale(item.baseMacros.fat),
+    fibre:   scale(item.baseMacros.fibre),
+    sugar:   scale(item.baseMacros.sugar),
+  };
+  save();
+  renderContent();
+}
+
+function updatePortionMult(id, rawVal) {
+  const idx = foodLog.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const item = foodLog[idx];
+  if (!item.baseMacros || !item.basePortion) return;
+
+  let mult = parseFloat(rawVal);
+  if (isNaN(mult) || mult <= 0) mult = 1;
+  mult = Math.round(mult * 100) / 100; // round to 2dp
+
+  const grams = item.currentPortion != null ? item.currentPortion : item.basePortion;
+  const ratio = (grams / item.basePortion) * mult;
+  const scale = (v) => v != null ? parseFloat((v * ratio).toFixed(1)) : null;
+
+  foodLog[idx] = {
+    ...item,
+    portionMultiplier: mult,
+    portion: `${grams}${foodUnitLabel()} × ${mult}`,
+    kcal:    Math.round(item.baseMacros.kcal * ratio),
+    protein: scale(item.baseMacros.protein),
+    carbs:   scale(item.baseMacros.carbs),
+    fat:     scale(item.baseMacros.fat),
+    fibre:   scale(item.baseMacros.fibre),
+    sugar:   scale(item.baseMacros.sugar),
+  };
+  save();
+  renderContent();
+}
+
+function stepPortion(id, delta) {
+  const item = foodLog.find(x => x.id === id);
+  if (!item || !item.basePortion) return;
+  const current = item.currentPortion != null ? item.currentPortion : item.basePortion;
+  const next = Math.max(5, current + delta);
+  updatePortion(id, next);
+}
+
+function stepPortionMult(id, delta) {
+  const item = foodLog.find(x => x.id === id);
+  if (!item || !item.basePortion) return;
+  const current = item.portionMultiplier != null ? item.portionMultiplier : 1;
+  const next = Math.max(0.25, Math.round((current + delta) * 100) / 100);
+  updatePortionMult(id, next);
+}
+
+function resetPortion(id) {
+  const idx = foodLog.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const item = foodLog[idx];
+  if (!item.basePortion || !item.baseMacros) return;
+  foodLog[idx] = {
+    ...item,
+    currentPortion: item.basePortion,
+    portionMultiplier: 1,
+    portion: `${item.basePortion}${foodUnitLabel()}`,
+    kcal:    item.baseMacros.kcal,
+    protein: item.baseMacros.protein,
+    carbs:   item.baseMacros.carbs,
+    fat:     item.baseMacros.fat,
+    fibre:   item.baseMacros.fibre,
+    sugar:   item.baseMacros.sugar,
+  };
+  save();
+  renderContent();
+}
+
+// ── WEIGHT MODAL ─────────────────────────────────────────────────────────────
+function openWeightModal() {
+  const u = settings.weightUnit || 'kg';
+
+  // Get last logged weight for pre-filling
+  const sorted = [...weightLog].sort((a,b) => a.date.localeCompare(b.date));
+  const lastKg = sorted.length ? sorted[sorted.length - 1].kg : null;
+
+  let v1 = '', v2 = '';
+  if (lastKg) {
+    if (u === 'kg') {
+      v1 = lastKg.toFixed(1);
+    } else if (u === 'lbs') {
+      v1 = (lastKg * 2.20462).toFixed(1);
+    } else if (u === 'st_lbs') {
+      const totalLbs = lastKg * 2.20462;
+      v1 = Math.floor(totalLbs / 14);
+      v2 = Math.round(totalLbs % 14);
+    }
+  }
+
+  let bodyHTML = '';
+  if (u === 'kg') {
+    bodyHTML = `
+      <div style="margin-bottom:16px;color:var(--text2);font-size:14px">Enter your weight in kilograms</div>
+      <div class="input-row">
+        <input class="input-field" id="wInput1" value="${v1}" placeholder="e.g. 75.5" type="number" step="0.1" inputmode="decimal">
+        <span style="display:flex;align-items:center;font-size:15px;color:var(--text2);padding:0 8px;flex-shrink:0">kg</span>
+      </div>`;
+  } else if (u === 'lbs') {
+    bodyHTML = `
+      <div style="margin-bottom:16px;color:var(--text2);font-size:14px">Enter your weight in pounds</div>
+      <div class="input-row">
+        <input class="input-field" id="wInput1" value="${v1}" placeholder="e.g. 165.5" type="number" step="0.1" inputmode="decimal">
+        <span style="display:flex;align-items:center;font-size:15px;color:var(--text2);padding:0 8px;flex-shrink:0">lbs</span>
+      </div>`;
+  } else if (u === 'st_lbs') {
+    bodyHTML = `
+      <div style="margin-bottom:16px;color:var(--text2);font-size:14px">Enter your weight in stones and pounds</div>
+      <div class="input-row">
+        <input class="input-field" id="wInput1" value="${v1}" placeholder="11" type="number" step="1" inputmode="numeric">
+        <span style="display:flex;align-items:center;font-size:15px;color:var(--text2);padding:0 4px;flex-shrink:0">st</span>
+        <input class="input-field" id="wInput2" value="${v2}" placeholder="0" type="number" step="1" inputmode="numeric">
+        <span style="display:flex;align-items:center;font-size:15px;color:var(--text2);padding:0 4px;flex-shrink:0">lbs</span>
+      </div>`;
+  }
+  document.getElementById('weightModalBody').innerHTML = bodyHTML;
+  document.getElementById('weightModal').classList.add('open');
+  setTimeout(() => {
+    const el = document.getElementById('wInput1');
+    if (el) { el.focus(); el.select(); }
+  }, 350);
+}
+
+function closeWeightModal() {
+  document.getElementById('weightModal').classList.remove('open');
+}
+
+function saveWeight() {
+  const u = settings.weightUnit || 'kg';
+  const v1 = document.getElementById('wInput1')?.value;
+  const v2 = document.getElementById('wInput2')?.value || '0';
+  const kg = displayToKg(v1, v2);
+
+  if (isNaN(kg) || kg <= 0 || kg > 500) { showToast('Please enter a valid weight'); return; }
+
+  const today = todayStr();
+  weightLog.push({ date: today, time: new Date().toISOString(), kg });
+  save();
+  closeWeightModal();
+  const disp = kgToDisplay(kg);
+  showToast(`Weight logged: ${disp.single}`);
+  renderContent();
+}
+
+function deleteWeight(id) {
+  // id is either a time ISO string (new entries) or a date string (legacy entries)
+  weightLog = weightLog.filter(w => (w.time || w.date) !== id);
+  save();
+  renderContent();
+}
+
+// ── SETTINGS SAVE ────────────────────────────────────────────────────────────
+function saveSettings() {
+  settings.name = document.getElementById('s-name')?.value?.trim() || '';
+  settings.dailyGoal = parseInt(document.getElementById('s-goal')?.value) || 2500;
+  settings.apiKey = document.getElementById('s-apikey')?.value?.trim() || '';
+  // Macro split
+  const keys = ['protein','carbs','fat'];
+  const vals = {};
+  keys.forEach(k => { vals[k] = parseInt(document.getElementById('ms-'+k)?.value) || settings.macroSplit[k+'Pct']; });
+  settings.macroSplit.proteinPct = vals.protein;
+  settings.macroSplit.carbsPct   = vals.carbs;
+  settings.macroSplit.fatPct     = vals.fat;
+  settings.macroSplit.fibreG = parseInt(document.getElementById('ms-fibre')?.value) || 30;
+  settings.macroSplit.sugarG = parseInt(document.getElementById('ms-sugar')?.value) || 30;
+  // Target weight
+  const tw1 = document.getElementById('s-target-w1')?.value;
+  const tw2 = document.getElementById('s-target-w2')?.value || '0';
+  if (tw1) {
+    settings.targetWeight = displayToKg(tw1, tw2);
+  } else {
+    settings.targetWeight = null;
+  }
+  // weightUnit and foodUnit are saved instantly via setWeightUnit / setFoodUnit
+  save();
+  showToast('Settings saved ✓');
+  renderContent();
+}
+
+function clearToday() {
+  if (!confirm('Clear all food logged today?')) return;
+  foodLog = foodLog.filter(f => f.date !== todayStr());
+  save();
+  showToast('Today\'s log cleared');
+  renderContent();
+}
+
+function clearAll() {
+  if (!confirm('Reset ALL data? This cannot be undone.')) return;
+  foodLog = [];
+  weightLog = [];
+  settings = { apiKey: '', dailyGoal: 2500, weightUnit: 'kg', foodUnit: 'g', name: '' };
+  save();
+  showToast('All data cleared');
+  renderContent();
+}
+
+// ── CLOSE MODALS ON BG TAP ───────────────────────────────────────────────────
+document.getElementById('foodModal').addEventListener('click', function(e) {
+  if (e.target === this) closeFoodModal();
+});
+document.getElementById('weightModal').addEventListener('click', function(e) {
+  if (e.target === this) closeWeightModal();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderContent();
+
+// ── SERVICE WORKER REGISTRATION ───────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
