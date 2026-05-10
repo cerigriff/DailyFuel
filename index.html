@@ -434,6 +434,42 @@
     z-index: 300; white-space: nowrap;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── SELECTION MODE ── */
+  .food-item.selectable { cursor: pointer; }
+  .food-item.selected {
+    background: rgba(249,115,22,0.1);
+    border-radius: var(--radius-sm);
+    margin: 0 -8px; padding-left: 8px; padding-right: 8px;
+  }
+  .select-checkbox {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--border); background: var(--surface2);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; transition: background 0.15s, border-color 0.15s;
+  }
+  .food-item.selected .select-checkbox {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .selection-bar {
+    position: fixed; bottom: calc(var(--safe-bottom) + 16px);
+    left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--accent);
+    border-radius: 100px; padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px;
+    z-index: 160; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    white-space: nowrap;
+  }
+  .selection-bar-count { font-size: 14px; font-weight: 600; color: var(--accent); }
+  .selection-bar-btn {
+    background: var(--accent); color: white; border: none;
+    border-radius: 100px; padding: 7px 14px; font-size: 13px;
+    font-weight: 600; cursor: pointer;
+  }
+  .selection-bar-cancel {
+    background: none; border: none; color: var(--text2);
+    font-size: 13px; cursor: pointer; padding: 7px 4px;
+  }
 </style>
 </head>
 <body>
@@ -467,6 +503,13 @@
 
   <!-- FAB (only on today tab) -->
   <button class="fab" id="fab" onclick="viewingDate && viewingDate !== todayStr() ? openFoodModalForDate(viewingDate) : openFoodModal()" title="Log food">+</button>
+
+  <!-- SELECTION BAR (shown when items selected) -->
+  <div class="selection-bar" id="selectionBar" style="display:none">
+    <span class="selection-bar-count" id="selectionCount">0 selected</span>
+    <button class="selection-bar-btn" onclick="groupSelectedIntoMeal()">🍱 Group into meal</button>
+    <button class="selection-bar-cancel" onclick="exitSelectionMode()">Cancel</button>
+  </div>
 </div>
 
 <!-- FOOD MODAL -->
@@ -766,19 +809,39 @@ function foodItemHTML(f, showDel=true, showCopy=false) {
       <span class="portion-ref">1 serving = ${f.basePortion}${unit} / ${f.baseMacros.kcal} kcal · Now: ${Math.round(f.baseMacros.kcal * (current/f.basePortion) * portionMult)} kcal</span>`;
   }
 
+  const isSelected = selectionMode && selectedIds.has(f.id);
+
+  // Click handler: selection mode takes priority
+  let clickHandler = '';
+  let longPressAttrs = '';
+  if (showDel) {
+    if (selectionMode) {
+      clickHandler = `onclick="toggleSelectItem('${f.id}')"`;
+    } else if (f.isCustomMeal && f.mealId) {
+      // Custom meal — open meal edit view inside the modal
+      clickHandler = `onclick="openFoodModal();setTimeout(()=>{setFoodMode('meal');openMealEdit('${f.mealId}')},200)"`;
+    } else {
+      clickHandler = `onclick="openEditModal('${f.id}')"`;
+    }
+    longPressAttrs = `data-longpress-id="${f.id}"`;
+  }
+
   return `
-  <div class="food-item" ${showDel ? `onclick="openEditModal('${f.id}')" style="cursor:pointer"` : ''}>
-    ${f.thumb ? `<img class="food-thumb" src="${f.thumb}" alt="${f.name}">` : `<div class="food-thumb-placeholder">🍴</div>`}
+  <div class="food-item${selectionMode ? ' selectable' : ''}${isSelected ? ' selected' : ''}" ${clickHandler} ${longPressAttrs} style="cursor:${showDel?'pointer':'default'}">
+    ${selectionMode
+      ? `<div class="select-checkbox">${isSelected ? '✓' : ''}</div>`
+      : f.thumb ? `<img class="food-thumb" src="${f.thumb}" alt="${f.name}">` : `<div class="food-thumb-placeholder">🍴</div>`
+    }
     <div class="food-info">
       <div class="food-name">${f.name}${mealBadge}</div>
       <div class="food-meta">${fmtTime(f.time)}${portion}</div>
       ${macroChipsHTML(f)}
-      ${portionScalerHTML}
+      ${!selectionMode ? portionScalerHTML : ''}
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
       <div class="food-kcal">${f.kcal} kcal</div>
-      ${showCopy ? `<button class="food-edit" onclick="copyToToday('${f.id}');event.stopPropagation()" title="Copy to today" style="font-size:13px">📋 Today</button>` : ''}
-      ${showDel ? `<button class="food-edit" onclick="openEditModal('${f.id}');event.stopPropagation()" title="Edit">✏️</button>
+      ${!selectionMode && showCopy ? `<button class="food-edit" onclick="copyToToday('${f.id}');event.stopPropagation()" title="Copy to today" style="font-size:13px">📋 Today</button>` : ''}
+      ${!selectionMode && showDel ? `<button class="food-edit" onclick="openEditModal('${f.id}');event.stopPropagation()" title="Edit">✏️</button>
                   <button class="food-del" onclick="deleteFood('${f.id}');event.stopPropagation()" title="Delete">
                     <svg width="17" height="22" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M1 4h12M5 4V2h4v2M2 4l1 12h8l1-12M5 8v5M9 8v5"/>
@@ -861,6 +924,7 @@ function showTab(name) {
   currentTab = name;
   if (name !== 'history') historyFocusDate = null;
   if (name === 'today') viewingDate = null;
+  if (selectionMode) { selectionMode = false; selectedIds = new Set(); document.getElementById('selectionBar').style.display = 'none'; }
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-'+name)?.classList.add('active');
   document.getElementById('fab').style.display = (name === 'today') ? 'flex' : 'none';
@@ -1850,6 +1914,7 @@ function createMealFromPicker() {
 function closeMealPicker() {
   document.getElementById('mealPickerModal').classList.remove('open');
   window._pendingMealIngredient = null;
+  window._pendingGroupIds = null;
 }
 
 function setFoodMode(mode) {
@@ -1896,6 +1961,7 @@ function openFoodModalForDate(date) {
 }
 
 function openFoodModal() {
+  if (selectionMode) exitSelectionMode();
   editingId = null;
   logFoodForDate = null;
   pendingFood = null;
@@ -2578,6 +2644,139 @@ function clearAll() {
   renderContent();
 }
 
+// ── SELECTION MODE ───────────────────────────────────────────────────────────
+let selectionMode = false;
+let selectedIds = new Set();
+
+function enterSelectionMode(firstId) {
+  selectionMode = true;
+  selectedIds = new Set([firstId]);
+  updateSelectionBar();
+  renderContent();
+}
+
+function exitSelectionMode() {
+  selectionMode = false;
+  selectedIds = new Set();
+  document.getElementById('selectionBar').style.display = 'none';
+  document.getElementById('fab').style.display = currentTab === 'today' ? 'flex' : 'none';
+  renderContent();
+}
+
+function toggleSelectItem(id) {
+  if (selectedIds.has(id)) {
+    selectedIds.delete(id);
+  } else {
+    selectedIds.add(id);
+  }
+  if (selectedIds.size === 0) {
+    exitSelectionMode();
+    return;
+  }
+  updateSelectionBar();
+  renderContent();
+}
+
+function updateSelectionBar() {
+  const bar = document.getElementById('selectionBar');
+  const count = document.getElementById('selectionCount');
+  const fab = document.getElementById('fab');
+  bar.style.display = 'flex';
+  fab.style.display = 'none'; // hide FAB while selecting
+  count.textContent = `${selectedIds.size} selected`;
+}
+
+function groupSelectedIntoMeal() {
+  if (!selectedIds.size) return;
+  const selected = foodLog.filter(f => selectedIds.has(f.id));
+  if (!selected.length) return;
+
+  // Show meal picker for grouping
+  const preview = document.getElementById('mealPickerIngredientPreview');
+  if (preview) preview.textContent = `${selected.length} item${selected.length !== 1 ? 's' : ''} — ${selected.reduce((s,f)=>s+f.kcal,0)} kcal total`;
+
+  const list = document.getElementById('mealPickerList');
+  if (list) {
+    const baseHTML = customMeals.map(m => {
+      const t = mealTotals(m);
+      return `
+      <div class="search-result-item" style="margin:8px 0" onclick="addGroupToMeal('${m.id}')">
+        <div style="flex:1">
+          <div class="search-result-name">${m.name}</div>
+          <div class="search-result-meta">${m.ingredients.length} ingredient${m.ingredients.length !== 1 ? 's' : ''} · ${Math.round(t.kcal)} kcal so far</div>
+        </div>
+        <div style="font-size:13px;color:var(--accent);font-weight:600">+ Add</div>
+      </div>`;
+    }).join('');
+    list.innerHTML = baseHTML || `<div style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center">No meals yet — tap "+ New meal" below.</div>`;
+  }
+
+  window._pendingMealIngredient = null; // not single ingredient mode
+  window._pendingGroupIds = new Set(selectedIds);
+  document.getElementById('mealPickerModal').classList.add('open');
+}
+
+function addGroupToMeal(mealId) {
+  const meal = customMeals.find(m => m.id === mealId);
+  if (!meal) return;
+  const ids = window._pendingGroupIds;
+  if (!ids) return;
+
+  const selected = foodLog.filter(f => ids.has(f.id));
+
+  // Add each as ingredient
+  selected.forEach(f => {
+    meal.ingredients.push({
+      id: uid(), name: f.name,
+      kcal: f.kcal, protein: f.protein||0, carbs: f.carbs||0,
+      fat: f.fat||0, fibre: f.fibre||0, sugar: f.sugar||0,
+      portion: f.portion || null,
+    });
+  });
+  saveMealsStore();
+
+  // Remove items from log and add single meal entry
+  const t = mealTotals(meal);
+  foodLog = foodLog.filter(f => !ids.has(f.id));
+  const entry = {
+    id: uid(),
+    date: selected[0].date,
+    time: new Date().toISOString(),
+    name: meal.name,
+    portion: `${meal.ingredients.length} ingredients`,
+    kcal: Math.round(t.kcal),
+    protein: parseFloat(t.protein.toFixed(1)),
+    carbs:   parseFloat(t.carbs.toFixed(1)),
+    fat:     parseFloat(t.fat.toFixed(1)),
+    fibre:   parseFloat(t.fibre.toFixed(1)),
+    sugar:   parseFloat(t.sugar.toFixed(1)),
+    isCustomMeal: true,
+    mealId: meal.id,
+    thumb: null,
+  };
+  foodLog.push(entry);
+  save();
+
+  closeMealPicker();
+  exitSelectionMode();
+  showToast(`Grouped into "${meal.name}" ✓`);
+}
+
+// Override createMealFromPicker to handle group mode too
+const _origCreateMealFromPicker = createMealFromPicker;
+function createMealFromPicker() {
+  if (window._pendingGroupIds) {
+    const name = prompt('Name for the new meal:');
+    if (!name?.trim()) return;
+    const meal = { id: uid(), name: name.trim(), ingredients: [] };
+    customMeals.unshift(meal);
+    saveMealsStore();
+    addGroupToMeal(meal.id);
+  } else {
+    _origCreateMealFromPicker();
+  }
+}
+
 // ── CLOSE MODALS ON BG TAP ───────────────────────────────────────────────────
 document.getElementById('foodModal').addEventListener('click', function(e) {
   if (e.target === this) closeFoodModal();
@@ -2588,6 +2787,40 @@ document.getElementById('weightModal').addEventListener('click', function(e) {
 document.getElementById('mealPickerModal').addEventListener('click', function(e) {
   if (e.target === this) closeMealPicker();
 });
+
+// ── LONG PRESS (delegated on content div) ────────────────────────────────────
+(function() {
+  let pressTimer = null;
+  const content = document.getElementById('content');
+
+  function getItemEl(target) {
+    return target.closest('[data-longpress-id]');
+  }
+
+  content.addEventListener('pointerdown', e => {
+    const el = getItemEl(e.target);
+    if (!el) return;
+    const id = el.dataset.longpressId;
+    pressTimer = setTimeout(() => {
+      pressTimer = null;
+      if (!selectionMode) {
+        enterSelectionMode(id);
+      }
+    }, 500);
+  });
+
+  content.addEventListener('pointerup', () => {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+  });
+
+  content.addEventListener('pointermove', () => {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+  });
+
+  content.addEventListener('pointercancel', () => {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+  });
+})();
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 renderContent();
