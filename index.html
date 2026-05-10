@@ -30,7 +30,7 @@
     --safe-top: env(safe-area-inset-top, 0px);
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 
   html, body {
     width: 100%;
@@ -2797,9 +2797,13 @@ document.getElementById('mealPickerModal').addEventListener('click', function(e)
     return target.closest('[data-longpress-id]');
   }
 
+  // Suppress the browser's context menu (iOS "copy/look up" bubble) during long press
+  content.addEventListener('contextmenu', e => e.preventDefault());
+
   content.addEventListener('pointerdown', e => {
     const el = getItemEl(e.target);
     if (!el) return;
+    e.preventDefault(); // stop browser text-selection drag from starting
     const id = el.dataset.longpressId;
     pressTimer = setTimeout(() => {
       pressTimer = null;
