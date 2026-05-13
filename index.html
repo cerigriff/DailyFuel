@@ -593,6 +593,15 @@
         </div>
         <div id="mealEditIngredients"></div>
         <div id="mealEditTotals" style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;margin:10px 0;font-size:13px;color:var(--text2)"></div>
+        <div class="portion-row" style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px">
+          <span class="portion-lbl" style="font-size:13px;color:var(--text2)">× Portions</span>
+          <div class="portion-stepper">
+            <button class="portion-step-btn" onclick="stepMealMult(-0.25)">−</button>
+            <input class="portion-input" type="number" inputmode="decimal" step="0.25" id="mealPortionMult" value="1" min="0.25" style="width:44px" onchange="updateMealTotalsDisplay()">
+            <button class="portion-step-btn" onclick="stepMealMult(0.25)">+</button>
+          </div>
+          <span id="mealMultKcal" style="font-size:12px;color:var(--text3);margin-left:6px"></span>
+        </div>
         <button class="btn btn-accent" style="width:100%;padding:12px;font-size:15px;margin-top:4px" onclick="logMeal(activeMealId)">🍱 Log this meal</button>
       </div>
     </div>
@@ -1727,6 +1736,11 @@ function openMealEdit(id) {
   document.getElementById('mealListView').style.display = 'none';
   document.getElementById('mealEditView').style.display = 'block';
   document.getElementById('mealEditTitle').textContent = `🍱 ${meal.name}`;
+  // Reset portion multiplier each time a meal is opened
+  const multInput = document.getElementById('mealPortionMult');
+  if (multInput) multInput.value = 1;
+  const kcalSpan = document.getElementById('mealMultKcal');
+  if (kcalSpan) kcalSpan.textContent = '';
   renderMealEditIngredients();
 }
 
@@ -1754,10 +1768,7 @@ function renderMealEditIngredients() {
       </div>`).join('');
   }
 
-  const t = mealTotals(meal);
-  totEl.innerHTML = meal.ingredients.length
-    ? `<strong style="color:var(--text)">Total: ${Math.round(t.kcal)} kcal</strong> · P${t.protein.toFixed(1)}g · C${t.carbs.toFixed(1)}g · F${t.fat.toFixed(1)}g`
-    : '';
+  updateMealTotalsDisplay();
 }
 
 function removeMealIngredient(mealId, idx) {
@@ -1808,18 +1819,21 @@ function logMeal(id) {
   if (!meal) return;
   if (!meal.ingredients.length) { showToast('Add ingredients to this meal first'); return; }
   const t = mealTotals(meal);
+  const multInput = document.getElementById('mealPortionMult');
+  const mult = multInput ? Math.max(0.25, parseFloat(multInput.value) || 1) : 1;
+  const portionLabel = mult !== 1 ? `${meal.ingredients.length} ingredients × ${mult}` : `${meal.ingredients.length} ingredients`;
   const entry = {
     id:      uid(),
     date:    logFoodForDate || todayStr(),
     time:    new Date().toISOString(),
     name:    meal.name,
-    portion: `${meal.ingredients.length} ingredients`,
-    kcal:    Math.round(t.kcal),
-    protein: parseFloat(t.protein.toFixed(1)),
-    carbs:   parseFloat(t.carbs.toFixed(1)),
-    fat:     parseFloat(t.fat.toFixed(1)),
-    fibre:   parseFloat(t.fibre.toFixed(1)),
-    sugar:   parseFloat(t.sugar.toFixed(1)),
+    portion: portionLabel,
+    kcal:    Math.round(t.kcal * mult),
+    protein: parseFloat((t.protein * mult).toFixed(1)),
+    carbs:   parseFloat((t.carbs * mult).toFixed(1)),
+    fat:     parseFloat((t.fat * mult).toFixed(1)),
+    fibre:   parseFloat((t.fibre * mult).toFixed(1)),
+    sugar:   parseFloat((t.sugar * mult).toFixed(1)),
     isCustomMeal: true,
     mealId:  meal.id,
     thumb:   null,
@@ -1827,8 +1841,36 @@ function logMeal(id) {
   foodLog.push(entry);
   save();
   closeFoodModal();
-  showToast(`🍱 Logged: ${meal.name} · ${Math.round(t.kcal)} kcal`);
+  showToast(`🍱 Logged: ${meal.name}${mult !== 1 ? ` × ${mult}` : ''} · ${Math.round(t.kcal * mult)} kcal`);
   renderContent();
+}
+
+function stepMealMult(delta) {
+  const input = document.getElementById('mealPortionMult');
+  if (!input) return;
+  const current = parseFloat(input.value) || 1;
+  const next = Math.max(0.25, Math.round((current + delta) * 100) / 100);
+  input.value = next;
+  updateMealTotalsDisplay();
+}
+
+function updateMealTotalsDisplay() {
+  const meal = customMeals.find(m => m.id === activeMealId);
+  if (!meal) return;
+  const multInput = document.getElementById('mealPortionMult');
+  const mult = multInput ? Math.max(0.25, parseFloat(multInput.value) || 1) : 1;
+  const el = document.getElementById('mealEditTotals');
+  if (el) {
+    if (!meal.ingredients.length) { el.innerHTML = ''; return; }
+    const t = mealTotals(meal);
+    const scaledKcal = Math.round(t.kcal * mult);
+    const scaledP = (t.protein * mult).toFixed(1);
+    const scaledC = (t.carbs * mult).toFixed(1);
+    const scaledF = (t.fat * mult).toFixed(1);
+    el.innerHTML = `<strong style="color:var(--text)">Total: ${scaledKcal} kcal</strong> · P${scaledP}g · C${scaledC}g · F${scaledF}g`;
+    const kcalSpan = document.getElementById('mealMultKcal');
+    if (kcalSpan) kcalSpan.textContent = mult !== 1 ? `= ${scaledKcal} kcal` : '';
+  }
 }
 
 // ── ADD TO MEAL (from any food source) ──────────────────────────────────────
