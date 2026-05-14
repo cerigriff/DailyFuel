@@ -1100,6 +1100,7 @@ function foodItemHTML(f, showDel=true, showCopy=false) {
       <div class="expand-macros">${macroChipsHTML(f)}</div>
       <div class="expand-footer">
         ${showCopy ? `<button class="expand-edit-btn" style="margin-right:auto" onclick="copyToToday('${f.id}');event.stopPropagation()">📋 Copy to today</button>` : ''}
+        <button class="expand-edit-btn" onclick="addLogEntryToMeal('${f.id}');event.stopPropagation()">🍱 Add to meal</button>
         <button class="expand-edit-btn" onclick="${editBtnHandler}">✏️ Full edit</button>
       </div>
     </div>`;
@@ -1125,11 +1126,11 @@ function foodItemHTML(f, showDel=true, showCopy=false) {
 
   return `
   <div class="food-item-wrap" id="wrap-${f.id}">
-    <div class="food-del-swipe" onclick="deleteFood('${f.id}')" title="Delete">
+    ${!selectionMode ? `<div class="food-del-swipe" onclick="deleteFood('${f.id}')" title="Delete">
       <svg width="17" height="22" viewBox="0 0 14 18" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M1 4h12M5 4V2h4v2M2 4l1 12h8l1-12M5 8v5M9 8v5"/>
       </svg>
-    </div>
+    </div>` : ''}
     <div class="food-item${selectionMode ? ' selectable' : ''}${isSelected ? ' selected' : ''}${isSwiped ? ' swiped' : ''}" ${rowClick} ${longPressAttrs} data-swipe-id="${f.id}" style="cursor:${showDel?'pointer':'default'}">
       ${thumbHTML}
       <div class="food-info">
@@ -1847,7 +1848,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v23 · Data synced to cloud
+    DailyFuel v25 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -2257,6 +2258,48 @@ function showAddToMealPicker() {
   }
 
   // Store pending ingredient
+  window._pendingMealIngredient = ing;
+  document.getElementById('mealPickerModal').classList.add('open');
+}
+
+function addLogEntryToMeal(entryId) {
+  const f = foodLog.find(x => x.id === entryId);
+  if (!f) return;
+  // Build an ingredient object from the log entry
+  const ing = {
+    id:      uid(),
+    name:    f.name,
+    portion: f.portion || null,
+    kcal:    f.kcal,
+    protein: f.protein || 0,
+    carbs:   f.carbs   || 0,
+    fat:     f.fat     || 0,
+    fibre:   f.fibre   || 0,
+    sugar:   f.sugar   || 0,
+  };
+
+  const preview = document.getElementById('mealPickerIngredientPreview');
+  if (preview) preview.textContent = `"${ing.name}" — ${ing.kcal} kcal`;
+
+  const list = document.getElementById('mealPickerList');
+  if (list) {
+    if (!customMeals.length) {
+      list.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center">No meals yet — create one first in the Meals tab in Log Food.</div>`;
+    } else {
+      list.innerHTML = customMeals.map(m => {
+        const t = mealTotals(m);
+        return `
+        <div class="search-result-item" style="margin:8px 0" onclick="addIngredientToMeal('${m.id}')">
+          <div style="flex:1">
+            <div class="search-result-name">${m.name}</div>
+            <div class="search-result-meta">${m.ingredients.length} ingredient${m.ingredients.length !== 1 ? 's' : ''} · ${Math.round(t.kcal)} kcal so far</div>
+          </div>
+          <div style="font-size:13px;color:var(--accent);font-weight:600">+ Add</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
   window._pendingMealIngredient = ing;
   document.getElementById('mealPickerModal').classList.add('open');
 }
