@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dailyfuel-v20';
+const CACHE_NAME = 'dailyfuel-v21';
 const ASSETS = [
   './',
   './index.html',

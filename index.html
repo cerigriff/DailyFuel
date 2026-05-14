@@ -349,7 +349,7 @@
     background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
     width: 100%; padding: 0;
     transform: translateY(100%); transition: transform 0.3s cubic-bezier(.32,.72,0,1);
-    max-height: 90vh; overflow: hidden; touch-action: pan-y;
+    height: 85vh; overflow: hidden;
     display: flex; flex-direction: column;
   }
   .modal-scroll {
@@ -669,35 +669,53 @@
     <div id="mealModeBox" style="display:none">
       <!-- Meal list view -->
       <div id="mealListView">
-        <div class="search-input-wrap" style="margin-bottom:10px">
+        <div class="search-input-wrap" style="margin-bottom:12px">
           <span class="search-icon" style="font-size:14px">🔍</span>
           <input class="input-field" id="mealSearchInput" placeholder="Search saved meals…" type="text" autocomplete="off" oninput="renderMealList(this.value)" style="padding-left:36px;padding-top:9px;padding-bottom:9px;font-size:14px">
         </div>
         <div id="mealListResults"></div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <input class="input-field" id="newMealNameInput" placeholder="New meal name…" type="text" style="flex:1;font-size:14px">
-          <button class="btn btn-accent" style="padding:10px 14px;font-size:14px;white-space:nowrap" onclick="createNewMeal()">+ Create</button>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Create new meal</div>
+          <div style="display:flex;gap:8px">
+            <input class="input-field" id="newMealNameInput" placeholder="Meal name…" type="text" style="flex:1;font-size:14px">
+            <button class="btn btn-accent" style="padding:10px 16px;font-size:14px;white-space:nowrap" onclick="createNewMeal()">+ Create</button>
+          </div>
         </div>
       </div>
       <!-- Meal edit view -->
       <div id="mealEditView" style="display:none">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <!-- Header row -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
           <button class="btn btn-surface" style="padding:8px 12px;font-size:13px" onclick="showMealList()">← Back</button>
-          <div id="mealEditTitle" style="font-size:16px;font-weight:700;flex:1"></div>
-          <button class="food-del" style="font-size:13px;opacity:0.6;padding:4px 8px" onclick="deleteCurrentMeal()">Delete meal</button>
+          <div id="mealEditTitle" style="font-size:16px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <button style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:4px 2px;white-space:nowrap" onclick="deleteCurrentMeal()">Delete</button>
         </div>
+
+        <!-- Totals bar -->
+        <div id="mealEditTotals" style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px"></div>
+
+        <!-- Ingredients list -->
         <div id="mealEditIngredients"></div>
-        <div id="mealEditTotals" style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;margin:10px 0;font-size:13px;color:var(--text2)"></div>
-        <div class="portion-row" style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px">
-          <span class="portion-lbl" style="font-size:13px;color:var(--text2)">× Portions</span>
-          <div class="portion-stepper">
-            <button class="portion-step-btn" onclick="stepMealMult(-0.25)">−</button>
-            <input class="portion-input" type="number" inputmode="decimal" step="0.25" id="mealPortionMult" value="1" min="0.25" style="width:44px" onchange="updateMealTotalsDisplay()">
-            <button class="portion-step-btn" onclick="stepMealMult(0.25)">+</button>
-          </div>
-          <span id="mealMultKcal" style="font-size:12px;color:var(--text3);margin-left:6px"></span>
+
+        <!-- Add ingredient hint -->
+        <div style="margin:12px 0 14px;padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);border:1px dashed var(--border)">
+          <div style="font-size:12px;color:var(--text2);line-height:1.5">Use <strong style="color:var(--text)">Search</strong>, <strong style="color:var(--text)">Photo</strong> or <strong style="color:var(--text)">Manual</strong> tabs to find a food, then tap <strong style="color:var(--accent)">Add to Meal</strong> to add it here.</div>
         </div>
-        <button class="btn btn-accent" style="width:100%;padding:12px;font-size:15px;margin-top:4px" onclick="logMeal(activeMealId)">🍱 Log this meal</button>
+
+        <!-- Portions stepper -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Portions</div>
+            <div id="mealMultKcal" style="font-size:11px;color:var(--text3);margin-top:1px"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0">
+            <button class="exp-step-btn" onclick="stepMealMult(-0.25)">−</button>
+            <input class="exp-step-val" type="number" inputmode="decimal" step="0.25" id="mealPortionMult" value="1" min="0.25" style="width:48px" onchange="updateMealTotalsDisplay()">
+            <button class="exp-step-btn" onclick="stepMealMult(0.25)">+</button>
+          </div>
+        </div>
+
+        <button class="btn btn-accent" style="width:100%;padding:14px;font-size:15px" onclick="logMeal(activeMealId)">Log this meal</button>
       </div>
     </div>
 
@@ -1829,7 +1847,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v20 · Data synced to cloud
+    DailyFuel v21 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -2031,19 +2049,17 @@ function renderMealEditIngredients() {
   if (!el) return;
 
   if (!meal.ingredients.length) {
-    el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:16px 0;text-align:center">No ingredients yet — use any food source (Search, Photo, Manual, Recents) and tap "Add to Meal" to add here.</div>`;
+    el.innerHTML = '';
   } else {
-    el.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">${meal.ingredients.length} ingredient${meal.ingredients.length !== 1 ? 's' : ''}</div>` +
+    el.innerHTML = `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">${meal.ingredients.length} ingredient${meal.ingredients.length !== 1 ? 's' : ''}</div>` +
       meal.ingredients.map((ing, i) => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:6px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ing.name}</div>
-          ${ing.portion ? `<div style="font-size:11px;color:var(--text3)">${ing.portion}</div>` : ''}
+          <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ing.name}</div>
+          ${ing.portion ? `<div style="font-size:11px;color:var(--text3);margin-top:1px">${ing.portion}</div>` : ''}
         </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <div style="font-size:13px;color:var(--accent);font-weight:600">${ing.kcal} kcal</div>
-          <button class="food-del" onclick="removeMealIngredient('${activeMealId}',${i})" style="font-size:14px;opacity:0.6">✕</button>
-        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">${ing.kcal} kcal</div>
+        <button onclick="removeMealIngredient('${activeMealId}',${i})" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">✕</button>
       </div>`).join('');
   }
 
@@ -2080,14 +2096,25 @@ function renderMealList(query='') {
   el.innerHTML = filtered.map(m => {
     const t = mealTotals(m);
     return `
-    <div class="search-result-item" style="margin-bottom:8px">
-      <div style="flex:1" onclick="openMealEdit('${m.id}')">
-        <div class="search-result-name">${m.name}</div>
-        <div class="search-result-meta">${m.ingredients.length} ingredient${m.ingredients.length !== 1 ? 's' : ''} · P${t.protein.toFixed(0)}g · C${t.carbs.toFixed(0)}g · F${t.fat.toFixed(0)}g</div>
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+        <div style="flex:1;min-width:0" onclick="openMealEdit('${m.id}')">
+          <div style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${m.ingredients.length} ingredient${m.ingredients.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:12px">
+          <div style="font-size:18px;font-weight:800;color:var(--accent)">${Math.round(t.kcal)}</div>
+          <div style="font-size:10px;color:var(--text3)">kcal</div>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <div class="search-result-kcal" onclick="openMealEdit('${m.id}')">${Math.round(t.kcal)}<span style="font-size:11px;color:var(--text2)"> kcal</span></div>
-        <button class="btn btn-accent" style="padding:6px 10px;font-size:12px;white-space:nowrap" onclick="logMeal('${m.id}')">Log</button>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <span class="macro-chip p">P ${t.protein.toFixed(0)}g</span>
+        <span class="macro-chip c">C ${t.carbs.toFixed(0)}g</span>
+        <span class="macro-chip f">F ${t.fat.toFixed(0)}g</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-surface" style="flex:1;padding:8px;font-size:13px" onclick="openMealEdit('${m.id}')">✏️ Edit</button>
+        <button class="btn btn-accent" style="flex:2;padding:8px;font-size:13px" onclick="logMeal('${m.id}')">Log meal</button>
       </div>
     </div>`;
   }).join('');
@@ -2155,12 +2182,21 @@ function updateMealTotalsDisplay() {
     if (!meal.ingredients.length) { el.innerHTML = ''; return; }
     const t = mealTotals(meal);
     const scaledKcal = Math.round(t.kcal * mult);
-    const scaledP = (t.protein * mult).toFixed(1);
-    const scaledC = (t.carbs * mult).toFixed(1);
-    const scaledF = (t.fat * mult).toFixed(1);
-    el.innerHTML = `<strong style="color:var(--text)">Total: ${scaledKcal} kcal</strong> · P${scaledP}g · C${scaledC}g · F${scaledF}g`;
+    const scaledP = (t.protein * mult).toFixed(0);
+    const scaledC = (t.carbs * mult).toFixed(0);
+    const scaledF = (t.fat * mult).toFixed(0);
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:600;color:var(--text2)">TOTAL</span>
+        <span style="font-size:20px;font-weight:800;color:var(--accent)">${scaledKcal} <span style="font-size:12px;font-weight:500;color:var(--text3)">kcal</span></span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <span class="macro-chip p">Protein ${scaledP}g</span>
+        <span class="macro-chip c">Carbs ${scaledC}g</span>
+        <span class="macro-chip f">Fat ${scaledF}g</span>
+      </div>`;
     const kcalSpan = document.getElementById('mealMultKcal');
-    if (kcalSpan) kcalSpan.textContent = mult !== 1 ? `= ${scaledKcal} kcal` : '';
+    if (kcalSpan) kcalSpan.textContent = mult !== 1 ? `${scaledKcal} kcal total` : '';
   }
 }
 
@@ -3126,6 +3162,29 @@ function createMealFromPicker() {
 document.getElementById('foodModal').addEventListener('click', function(e) {
   if (e.target === this) closeFoodModal();
 });
+
+// ── SWIPE DOWN TO CLOSE food modal ───────────────────────────────────────────
+(function() {
+  const handle = document.querySelector('#foodModal .modal-handle');
+  const modal  = document.querySelector('#foodModal .modal');
+  if (!handle || !modal) return;
+  let startY = null;
+  handle.addEventListener('touchstart', e => {
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  handle.addEventListener('touchmove', e => {
+    if (startY === null) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0) modal.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  handle.addEventListener('touchend', e => {
+    if (startY === null) return;
+    const dy = e.changedTouches[0].clientY - startY;
+    modal.style.transform = '';
+    if (dy > 80) closeFoodModal();
+    startY = null;
+  });
+})();
 document.getElementById('weightModal').addEventListener('click', function(e) {
   if (e.target === this) closeWeightModal();
 });
