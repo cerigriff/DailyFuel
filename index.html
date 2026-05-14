@@ -1196,6 +1196,12 @@ document.getElementById('headerDate').textContent =
 
 // ── TABS ─────────────────────────────────────────────────────────────────────
 let currentTab = 'today';
+
+// ── UI STATE (declared early so renderContent can safely reference them) ──────
+let selectionMode = false;
+let selectedIds = new Set();
+let expandedItemId = null;  // id of food-log entry currently expanded inline
+let swipedItemId = null;    // id of food-log entry currently swiped to reveal delete
 let weightChartPeriod = '1M'; // '2W' | '1M' | '3M' | '6M' | 'all'
 let historyFocusDate = null;  // date string to scroll/highlight in history tab
 let logFoodForDate = null;    // override date for food logging (null = today)
@@ -1828,7 +1834,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v15 · Data synced to cloud
+    DailyFuel v16 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -2991,10 +2997,6 @@ function clearAll() {
 }
 
 // ── SELECTION MODE ───────────────────────────────────────────────────────────
-let selectionMode = false;
-let selectedIds = new Set();
-let expandedItemId = null;  // id of food-log entry currently expanded inline
-let swipedItemId = null;    // id of food-log entry currently swiped to reveal delete
 
 function enterSelectionMode(firstId) {
   selectionMode = true;
