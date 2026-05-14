@@ -141,6 +141,7 @@
   /* ── FOOD ITEM (swipe wrapper + row) ── */
   .food-item-wrap {
     position: relative; overflow: hidden;
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
   }
   .food-item-wrap:last-child { border-bottom: none; }
@@ -148,7 +149,7 @@
     display: flex; align-items: center; gap: 12px;
     padding: 12px 0;
     transition: transform 0.2s ease;
-    background: transparent;
+    background: var(--surface);
     position: relative; z-index: 1;
   }
   .food-item.swiped { transform: translateX(-72px); }
@@ -1834,7 +1835,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v16 · Data synced to cloud
+    DailyFuel v17 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
