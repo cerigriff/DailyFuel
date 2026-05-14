@@ -1049,6 +1049,7 @@ async function cloudLoad(uid) {
       // Ensure macroSplit exists
       if (!settings.macroSplit) settings.macroSplit = { ...DEFAULT_MACRO_SPLIT };
       if (settings.eatBackExercise == null) settings.eatBackExercise = false;
+      if (settings.activityLevel == null) settings.activityLevel = 'light';
     }
   } catch(e) { console.warn('Cloud load failed (using local cache):', e); }
 }
@@ -1142,10 +1143,58 @@ let settings = STORAGE.get('df_settings', {
   name: '',
   macroSplit: { ...DEFAULT_MACRO_SPLIT },
   targetWeight: null,    // stored in kg
-  eatBackExercise: false, // whether exercise calories offset daily goal
+  eatBackExercise: false,
+  // Body stats (for TDEE + exercise calorie estimation)
+  sex: null,             // 'male' | 'female'
+  age: null,             // years
+  heightCm: null,        // always stored in cm
+  activityLevel: 'light', // 'sedentary' | 'light' | 'moderate' | 'active'
 });
 // Ensure macroSplit exists for users upgrading from older saved data
 if (!settings.macroSplit) settings.macroSplit = { ...DEFAULT_MACRO_SPLIT };
+
+// ── TDEE / BODY STATS ─────────────────────────────────────────────────────────
+const ACTIVITY_MULTIPLIERS = {
+  sedentary: 1.2,   // desk job, little/no exercise
+  light:     1.375, // light exercise 1-3 days/week
+  moderate:  1.55,  // moderate exercise 3-5 days/week
+  active:    1.725, // hard exercise 6-7 days/week
+};
+const ACTIVITY_LABELS = {
+  sedentary: 'Sedentary',
+  light:     'Lightly active',
+  moderate:  'Moderately active',
+  active:    'Very active',
+};
+
+// Returns current weight in kg from weight log, or null
+function currentWeightKg() {
+  if (!weightLog.length) return null;
+  const sorted = [...weightLog].sort((a,b) => a.date.localeCompare(b.date));
+  return sorted[sorted.length - 1].kg;
+}
+
+// Mifflin-St Jeor BMR, then apply activity multiplier for TDEE
+// Returns { bmr, tdee } or null if insufficient data
+function calcTDEE() {
+  const s = settings;
+  const weightKg = currentWeightKg() || null;
+  const heightCm = s.heightCm || null;
+  const age      = s.age || null;
+  const sex      = s.sex || null;
+  if (!weightKg || !heightCm || !age || !sex) return null;
+
+  // Mifflin-St Jeor
+  let bmr;
+  if (sex === 'male') {
+    bmr = 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+  } else {
+    bmr = 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+  }
+  const mult = ACTIVITY_MULTIPLIERS[s.activityLevel || 'light'];
+  const tdee = Math.round(bmr * mult);
+  return { bmr: Math.round(bmr), tdee };
+}
 
 function macroTargets() {
   const s = settings.macroSplit;
@@ -1998,6 +2047,164 @@ function seg(id, options, current, onChange) {
   </div>`;
 }
 
+function renderBodyStatsCard() {
+  const s = settings;
+  const wu = s.weightUnit || 'kg';
+
+  // Height display — stored in cm, show in cm or ft/in depending on weight unit pref
+  const useFtIn = wu === 'lbs' || wu === 'st_lbs';
+  let heightDisplay = '';
+  let heightInput = '';
+  if (s.heightCm) {
+    if (useFtIn) {
+      const totalIn = s.heightCm / 2.54;
+      const ft = Math.floor(totalIn / 12);
+      const inch = Math.round(totalIn % 12);
+      heightDisplay = `${ft}′${inch}″`;
+    } else {
+      heightDisplay = `${Math.round(s.heightCm)} cm`;
+    }
+  }
+
+  if (useFtIn) {
+    const totalIn = s.heightCm ? s.heightCm / 2.54 : null;
+    const ft   = totalIn ? Math.floor(totalIn / 12) : '';
+    const inch = totalIn ? Math.round(totalIn % 12) : '';
+    heightInput = `
+      <div style="display:flex;align-items:center;gap:4px">
+        <input class="setting-input" id="s-height-ft" value="${ft}" placeholder="5" type="number" min="3" max="8" style="width:58px">
+        <span style="font-size:13px;color:var(--text2)">ft</span>
+        <input class="setting-input" id="s-height-in" value="${inch}" placeholder="8" type="number" min="0" max="11" style="width:58px;margin-left:4px">
+        <span style="font-size:13px;color:var(--text2)">in</span>
+      </div>`;
+  } else {
+    heightInput = `
+      <div style="display:flex;align-items:center;gap:6px">
+        <input class="setting-input" id="s-height-cm" value="${s.heightCm ? Math.round(s.heightCm) : ''}" placeholder="170" type="number" min="100" max="250" style="width:90px">
+        <span style="font-size:13px;color:var(--text2)">cm</span>
+      </div>`;
+  }
+
+  // TDEE calculation
+  const tdeeResult = calcTDEE();
+  const weightKg = currentWeightKg();
+  const hasAllStats = s.sex && s.age && s.heightCm && weightKg;
+
+  let tdeeHTML = '';
+  if (hasAllStats && tdeeResult) {
+    const diff = settings.dailyGoal - tdeeResult.tdee;
+    const diffAbs = Math.abs(diff);
+    let deficitLabel, deficitCol, deficitNote;
+    if (Math.abs(diff) < 100) {
+      deficitLabel = 'Maintenance';
+      deficitCol = 'var(--text2)';
+      deficitNote = 'Your goal is roughly at maintenance — weight should stay stable.';
+    } else if (diff < 0) {
+      deficitLabel = `${diffAbs} kcal deficit`;
+      deficitCol = 'var(--green)';
+      deficitNote = `Roughly ${(diffAbs * 7 / 7700).toFixed(2)} kg (${(diffAbs * 7 / 3500).toFixed(2)} lbs) loss per week at this deficit.`;
+    } else {
+      deficitLabel = `${diffAbs} kcal surplus`;
+      deficitCol = 'var(--accent)';
+      deficitNote = `Roughly ${(diffAbs * 7 / 7700).toFixed(2)} kg (${(diffAbs * 7 / 3500).toFixed(2)} lbs) gain per week at this surplus.`;
+    }
+    const weightDisp = kgToDisplay(weightKg);
+    tdeeHTML = `
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">Your Estimates</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;text-align:center">
+            <div style="font-size:16px;font-weight:800;color:var(--text)">${tdeeResult.bmr}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px">BMR</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;text-align:center">
+            <div style="font-size:16px;font-weight:800;color:var(--accent)">${tdeeResult.tdee}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px">TDEE</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;text-align:center">
+            <div style="font-size:13px;font-weight:800;color:${deficitCol}">${deficitLabel}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:2px">vs goal</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.5;margin-bottom:10px">${deficitNote}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Using: ${weightDisp.single} from weight log · ${ACTIVITY_LABELS[s.activityLevel||'light']}</div>
+        <button class="btn btn-surface" style="width:100%;padding:9px;font-size:13px" onclick="useTDEEAsGoal(${tdeeResult.tdee})">
+          Use TDEE (${tdeeResult.tdee} kcal) as daily goal
+        </button>
+      </div>`;
+  } else if (!hasAllStats) {
+    const missing = [];
+    if (!s.sex) missing.push('sex');
+    if (!s.age) missing.push('age');
+    if (!s.heightCm) missing.push('height');
+    if (!weightKg) missing.push('a weight entry');
+    tdeeHTML = `
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);line-height:1.5">
+        Add ${missing.join(', ')} to see your TDEE and BMR estimates.
+      </div>`;
+  }
+
+  return `
+  <div class="card">
+    <div class="card-title">Body Stats</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5">Used for TDEE and personalised calorie burn estimates.</div>
+
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div class="setting-label">Biological Sex</div>
+      ${seg('seg-sex',
+        [{val:'female',label:'Female'},{val:'male',label:'Male'}],
+        s.sex || '', 'setBodySex')}
+    </div>
+
+    <div class="setting-row">
+      <div><div class="setting-label">Age</div></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input class="setting-input" id="s-age" value="${s.age||''}" placeholder="e.g. 32" type="number" min="16" max="100" style="width:80px">
+        <span style="font-size:13px;color:var(--text2)">yrs</span>
+      </div>
+    </div>
+
+    <div class="setting-row" style="align-items:flex-start;padding-top:14px">
+      <div style="padding-top:2px"><div class="setting-label">Height</div></div>
+      ${heightInput}
+    </div>
+
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;border-bottom:none">
+      <div>
+        <div class="setting-label">Activity Level</div>
+        <div class="setting-sub">Your general daily activity, not including workouts</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;width:100%">
+        ${Object.entries(ACTIVITY_LABELS).map(([val, label]) => {
+          const descs = {
+            sedentary: 'Desk job, mostly sitting',
+            light:     'Light walking, on feet some of the day',
+            moderate:  'Active job or regular exercise most days',
+            active:    'Very active job or intense training daily',
+          };
+          const isActive = (s.activityLevel || 'light') === val;
+          return `<div onclick="setActivityLevel('${val}')" style="
+            display:flex;align-items:center;gap:10px;padding:10px 12px;
+            background:${isActive ? 'rgba(249,115,22,0.1)' : 'var(--surface2)'};
+            border:1.5px solid ${isActive ? 'var(--accent)' : 'var(--border)'};
+            border-radius:var(--radius-sm);cursor:pointer;transition:all 0.15s">
+            <div style="width:18px;height:18px;border-radius:50%;border:2px solid ${isActive ? 'var(--accent)' : 'var(--border)'};background:${isActive ? 'var(--accent)' : 'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+              ${isActive ? '<div style="width:7px;height:7px;border-radius:50%;background:white"></div>' : ''}
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:${isActive ? 'var(--accent)' : 'var(--text)'}">${label}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:1px">${descs[val]}</div>
+            </div>
+            <div style="margin-left:auto;font-size:11px;color:var(--text3)">×${ACTIVITY_MULTIPLIERS[val]}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    ${tdeeHTML}
+  </div>`;
+}
+
 function renderSettings() {
   const wu = settings.weightUnit || 'kg';
   const fu = settings.foodUnit || 'g';
@@ -2009,6 +2216,8 @@ function renderSettings() {
       <input class="setting-input" id="s-name" value="${settings.name||''}" placeholder="Your name" type="text">
     </div>
   </div>
+
+  ${renderBodyStatsCard()}
 
   <div class="card">
     <div class="card-title">Units</div>
@@ -2180,7 +2389,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v2.8 · Data synced to cloud
+    DailyFuel v2.9 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -2246,6 +2455,44 @@ function toggleApiKeySection() {
 function toggleEatBack() {
   settings.eatBackExercise = !settings.eatBackExercise;
   save();
+  renderContent();
+}
+
+function setBodySex(val) {
+  settings.sex = val;
+  save();
+  renderContent();
+}
+
+function setActivityLevel(val) {
+  // Save any unsaved age/height first before re-rendering
+  _saveBodyStatsFields();
+  settings.activityLevel = val;
+  save();
+  renderContent();
+}
+
+function _saveBodyStatsFields() {
+  // Age
+  const ageEl = document.getElementById('s-age');
+  if (ageEl && ageEl.value) settings.age = parseInt(ageEl.value) || null;
+  // Height
+  const cmEl = document.getElementById('s-height-cm');
+  const ftEl = document.getElementById('s-height-ft');
+  const inEl = document.getElementById('s-height-in');
+  if (cmEl && cmEl.value) {
+    settings.heightCm = parseFloat(cmEl.value) || null;
+  } else if (ftEl && ftEl.value) {
+    const ft = parseFloat(ftEl.value) || 0;
+    const inch = parseFloat(inEl?.value) || 0;
+    settings.heightCm = (ft * 12 + inch) * 2.54 || null;
+  }
+}
+
+function useTDEEAsGoal(tdee) {
+  settings.dailyGoal = tdee;
+  save();
+  showToast(`Daily goal set to ${tdee} kcal (TDEE)`);
   renderContent();
 }
 
@@ -3358,14 +3605,29 @@ function estimateCalories() {
     document.getElementById('exEstNote').textContent = 'Fill in duration to auto-estimate, or enter manually.';
     return;
   }
-  // Simple MET-based estimate: kcal = MET × 3.5 × weight_kg / 200 × minutes
-  // Use 70kg as default body weight (rough estimate)
-  const weight = 70;
+  // MET-based: kcal = MET × 3.5 × weight_kg / 200 × minutes
+  // Use real weight from log if available, otherwise 70kg fallback
+  const weight = currentWeightKg() || 70;
   const met = EX_MET[currentExType] || 5;
-  const estimated = Math.round(met * 3.5 * weight / 200 * totalMin);
+
+  // Modest sex adjustment: women burn ~8% less at same weight/intensity
+  const sexAdj = settings.sex === 'female' ? 0.92 : 1.0;
+  // Modest age adjustment: -0.5% per year over 30
+  const age = settings.age || 30;
+  const ageAdj = age > 30 ? Math.max(0.85, 1 - (age - 30) * 0.005) : 1.0;
+
+  const estimated = Math.round(met * 3.5 * weight / 200 * totalMin * sexAdj * ageAdj);
+
   document.getElementById('exKcal').value = estimated;
   document.getElementById('exCalcBadge').style.display = 'block';
-  document.getElementById('exEstNote').textContent = `Estimated for ${totalMin} min ${EX_TYPES[currentExType]?.label || 'workout'}. Override if you have an accurate reading.`;
+
+  // Build source note
+  const usingReal = currentWeightKg() || settings.sex || settings.age;
+  const noteBase = `Estimated for ${totalMin} min ${EX_TYPES[currentExType]?.label || 'workout'}`;
+  const noteSrc = usingReal
+    ? ` using your body stats.`
+    : ` using defaults (add body stats in Settings for accuracy).`;
+  document.getElementById('exEstNote').textContent = noteBase + noteSrc + ' Override with your watch reading anytime.';
 }
 
 function onExKcalInput() {
@@ -3570,7 +3832,11 @@ function saveSettings() {
   } else {
     settings.targetWeight = null;
   }
-  // weightUnit and foodUnit are saved instantly via setWeightUnit / setFoodUnit
+  // Body stats
+  _saveBodyStatsFields();
+  const ageEl = document.getElementById('s-age');
+  if (ageEl) settings.age = parseInt(ageEl.value) || null;
+  // weightUnit, foodUnit, sex, activityLevel saved instantly via their own setters
   save();
   showToast('Settings saved ✓');
   renderContent();
