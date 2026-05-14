@@ -140,7 +140,6 @@
   /* ── FOOD LOG ── */
   /* ── FOOD ITEM (swipe wrapper + row) ── */
   .food-item-wrap {
-    position: relative; overflow: hidden;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
   }
@@ -150,14 +149,17 @@
     padding: 12px 0;
     transition: transform 0.2s ease;
     background: var(--surface);
-    position: relative; z-index: 1;
+    position: relative;
+    overflow: hidden;
   }
   .food-item.swiped { transform: translateX(-72px); }
   .food-del-swipe {
-    position: absolute; right: 0; top: 0; bottom: 0; width: 72px;
+    position: absolute; right: -72px; top: 0; bottom: 0; width: 72px;
     background: var(--red); display: flex; align-items: center; justify-content: center;
-    cursor: pointer; z-index: 0;
+    cursor: pointer;
+    transition: right 0.2s ease;
   }
+  .food-item.swiped .food-del-swipe { right: -72px; }
   .food-del-swipe svg { color: white; }
   .food-thumb {
     width: 40px; height: 40px; border-radius: 10px;
@@ -1116,11 +1118,6 @@ function foodItemHTML(f, showDel=true, showCopy=false) {
 
   return `
   <div class="food-item-wrap" id="wrap-${f.id}">
-    <div class="food-del-swipe" onclick="deleteFood('${f.id}')" title="Delete">
-      <svg width="17" height="22" viewBox="0 0 14 18" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M1 4h12M5 4V2h4v2M2 4l1 12h8l1-12M5 8v5M9 8v5"/>
-      </svg>
-    </div>
     <div class="food-item${selectionMode ? ' selectable' : ''}${isSelected ? ' selected' : ''}${isSwiped ? ' swiped' : ''}" ${rowClick} ${longPressAttrs} data-swipe-id="${f.id}" style="cursor:${showDel?'pointer':'default'}">
       ${thumbHTML}
       <div class="food-info">
@@ -1128,6 +1125,11 @@ function foodItemHTML(f, showDel=true, showCopy=false) {
         <div class="food-meta">${metaText}</div>
       </div>
       <div class="food-kcal">${f.kcal} kcal</div>
+      <div class="food-del-swipe" onclick="deleteFood('${f.id}');event.stopPropagation()" title="Delete">
+        <svg width="17" height="22" viewBox="0 0 14 18" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 4h12M5 4V2h4v2M2 4l1 12h8l1-12M5 8v5M9 8v5"/>
+        </svg>
+      </div>
     </div>
     ${expandHTML}
   </div>`;
@@ -1835,7 +1837,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v17 · Data synced to cloud
+    DailyFuel v18 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
