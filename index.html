@@ -1238,6 +1238,9 @@ function viewPastDay(date) {
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function renderContent() {
   const c = document.getElementById('content');
+  // Swipe state is transient UI — always reset after a re-render so items
+  // never get baked into the "swiped" position on subsequent renders
+  swipedItemId = null;
   if (currentTab === 'today')    c.innerHTML = renderToday();
   if (currentTab === 'weight')   c.innerHTML = renderWeight();
   if (currentTab === 'history')  c.innerHTML = renderHistory();
@@ -1825,7 +1828,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v14 · Data synced to cloud
+    DailyFuel v15 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
