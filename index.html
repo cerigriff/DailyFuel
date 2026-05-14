@@ -1066,16 +1066,6 @@ function foodItemHTML(f, showDel=true, showCopy=false) {
 
     expandHTML = `
     <div class="food-expand" onclick="event.stopPropagation()">
-      <div class="expand-header">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">${f.name}</div>
-          <div style="font-size:11px;color:var(--text3)">${fmtTime(f.time)}</div>
-        </div>
-        <div style="text-align:right">
-          <div class="expand-kcal" id="expand-kcal-${f.id}">${f.kcal} kcal</div>
-          <div class="expand-kcal-lbl">updates live</div>
-        </div>
-      </div>
       ${servingRow}
       <div class="expand-stepper-row">
         <span class="expand-stepper-lbl">Portions</span>
@@ -1128,7 +1118,10 @@ function foodItemHTML(f, showDel=true, showCopy=false) {
         <div class="food-name">${f.name}${mealBadge}</div>
         <div class="food-meta">${metaText}</div>
       </div>
-      <div class="food-kcal">${f.kcal} kcal</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <div class="food-kcal" id="expand-kcal-${f.id}">${f.kcal} kcal</div>
+        ${showDel && !selectionMode ? `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform 0.2s;transform:rotate(${isExpanded?'180':'0'}deg)"><polyline points="2,4 7,10 12,4"/></svg>` : ''}
+      </div>
     </div>
     ${expandHTML}
   </div>`;
@@ -1836,7 +1829,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v19 · Data synced to cloud
+    DailyFuel v20 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
