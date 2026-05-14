@@ -1847,7 +1847,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v21 · Data synced to cloud
+    DailyFuel v23 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -2286,7 +2286,21 @@ function closeMealPicker() {
   window._pendingGroupIds = null;
 }
 
+function clearManualForm() {
+  ['fName','fPortion','fKcal','fProtein','fCarbs','fFat','fFibre','fSugar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  hideAddToMealButton();
+}
+
 function setFoodMode(mode) {
+  // Clear manual form when switching away from it (unless editing an existing entry)
+  if (currentFoodMode === 'manual' && mode !== 'manual' && !editingId) {
+    clearManualForm();
+    document.getElementById('manualBox').style.display = 'none';
+  }
+
   currentFoodMode = mode;
   // Update buttons
   ['photo','search','meal','manual'].forEach(m => {
@@ -2298,19 +2312,14 @@ function setFoodMode(mode) {
   document.getElementById('mealModeBox').style.display   = mode === 'meal'   ? 'block' : 'none';
 
   if (mode === 'meal') {
-    // If we were in the edit view, stay there; otherwise show list
-    if (!activeMealId) {
-      document.getElementById('mealListView').style.display = 'block';
-      document.getElementById('mealEditView').style.display = 'none';
-      renderMealList();
-    }
+    showMealList();
   }
 
   if (mode === 'manual') {
     document.getElementById('manualBox').style.display = 'block';
     document.getElementById('manualBoxLabel').textContent = 'Enter Details';
   } else if (mode === 'photo') {
-    // manualBox shown after AI result
+    // manualBox shown after AI result fills it in
   } else if (mode === 'search') {
     document.getElementById('manualBox').style.display = 'none';
     setTimeout(() => document.getElementById('searchInput')?.focus(), 200);
@@ -2416,6 +2425,9 @@ function closeFoodModal() {
   document.getElementById('foodModal').classList.remove('open');
   editingId = null;
   logFoodForDate = null;
+  activeMealId = null;
+  document.getElementById('mealListView').style.display = 'block';
+  document.getElementById('mealEditView').style.display = 'none';
   document.getElementById('foodModalTitle').textContent = 'Log Food';
 }
 
