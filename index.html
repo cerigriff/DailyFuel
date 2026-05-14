@@ -812,9 +812,15 @@
 ">
   <div style="font-size:48px;margin-bottom:8px">🔥</div>
   <div style="font-size:26px;font-weight:800;margin-bottom:4px">Daily<span style="color:var(--accent)">Fuel</span></div>
-  <div style="font-size:13px;color:var(--text2);margin-bottom:32px">Sign in to keep your data safe</div>
 
-  <div style="width:100%;max-width:360px">
+  <!-- Spinner shown while Firebase resolves auth state -->
+  <div id="authSpinner" style="margin-top:32px">
+    <div style="width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.75s linear infinite"></div>
+  </div>
+
+  <!-- Login form — hidden until Firebase confirms signed-out -->
+  <div id="authForm" style="display:none;width:100%;max-width:360px">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:24px;text-align:center">Sign in to keep your data safe</div>
     <div id="authError" style="display:none;background:rgba(239,68,68,0.15);color:var(--red);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px;text-align:center"></div>
 
     <div style="margin-bottom:12px">
@@ -936,6 +942,8 @@ function signOutUser() {
   if (confirm('Sign out? Your data is saved in the cloud.')) {
     window._fbSignOut().then(() => {
       _fbUid = null;
+      document.getElementById('authSpinner').style.display = 'none';
+      document.getElementById('authForm').style.display = 'block';
       document.getElementById('authScreen').style.display = 'flex';
       document.getElementById('authSignInBtn').textContent = 'Sign In';
       document.getElementById('authRegisterBtn').textContent = 'Create Account';
@@ -951,12 +959,15 @@ window._onAuthChange = async function(user) {
     _fbUid = user.uid;
     // Load cloud data (will override localStorage if newer)
     await cloudLoad(user.uid);
-    // Hide auth screen, show app
+    // Hide auth screen entirely, show app
     document.getElementById('authScreen').style.display = 'none';
     renderContent();
     showTab(currentTab);
   } else {
     _fbUid = null;
+    // Firebase confirmed signed-out — now show the login form
+    document.getElementById('authSpinner').style.display = 'none';
+    document.getElementById('authForm').style.display = 'block';
     document.getElementById('authScreen').style.display = 'flex';
   }
 };
@@ -1848,7 +1859,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v26 · Data synced to cloud
+    DailyFuel v2.7 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
