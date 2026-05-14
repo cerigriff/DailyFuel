@@ -442,6 +442,42 @@
   /* scroll bar */
   .content::-webkit-scrollbar { display: none; }
 
+  /* ── EXERCISE ── */
+  .ex-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .ex-type-btn {
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 8px; text-align: center;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  }
+  .ex-type-btn.active { border-color: var(--accent); background: rgba(249,115,22,0.1); }
+  .ex-type-btn:active { background: rgba(249,115,22,0.15); }
+  .ex-type-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+  .ex-type-label { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .ex-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .ex-item:last-child { border-bottom: none; }
+  .ex-item-icon { font-size: 28px; flex-shrink: 0; width: 40px; text-align: center; }
+  .ex-item-info { flex: 1; min-width: 0; }
+  .ex-item-name { font-size: 14px; font-weight: 600; }
+  .ex-item-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .ex-item-kcal { font-size: 14px; font-weight: 700; color: var(--green); flex-shrink: 0; white-space: nowrap; }
+
+  .ex-summary-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .ex-summary-stat { flex: 1; background: var(--surface2); border-radius: var(--radius-sm); padding: 10px; text-align: center; }
+  .ex-summary-val { font-size: 20px; font-weight: 800; color: var(--green); line-height: 1; }
+  .ex-summary-lbl { font-size: 11px; color: var(--text2); margin-top: 3px; }
+
+  /* exercise home card */
+  .ex-home-card-inner { display: flex; align-items: center; gap: 14px; }
+  .ex-home-icon { font-size: 32px; flex-shrink: 0; }
+  .ex-home-info { flex: 1; }
+  .ex-home-kcal { font-size: 22px; font-weight: 800; color: var(--green); line-height: 1; }
+  .ex-home-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
   /* ── RECENTS STRIP ── */
   .recents-strip {
     display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px;
@@ -582,6 +618,9 @@
     <div class="tab active" onclick="showTab('today')" id="tab-today">
       <span class="tab-icon">🍽️</span>Today
     </div>
+    <div class="tab" onclick="showTab('exercise')" id="tab-exercise">
+      <span class="tab-icon">🏃</span>Exercise
+    </div>
     <div class="tab" onclick="showTab('weight')" id="tab-weight">
       <span class="tab-icon">⚖️</span>Weight
     </div>
@@ -597,7 +636,7 @@
   <div class="content" id="content"></div>
 
   <!-- FAB (only on today tab) -->
-  <button class="fab" id="fab" onclick="viewingDate && viewingDate !== todayStr() ? openFoodModalForDate(viewingDate) : openFoodModal()" title="Log food">+</button>
+  <button class="fab" id="fab" onclick="viewingDate && viewingDate !== todayStr() ? openFoodModalForDate(viewingDate) : openFoodModal()" title="Log">+</button>
 
   <!-- SELECTION BAR (shown when items selected) -->
   <div class="selection-bar" id="selectionBar" style="display:none">
@@ -791,6 +830,124 @@
   </div>
 </div>
 
+<!-- EXERCISE MODAL -->
+<div class="modal-overlay" id="exerciseModal">
+  <div class="modal">
+    <div class="modal-scroll" id="exerciseModalScroll">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="exerciseModalTitle">Log Exercise</div>
+
+    <!-- Type selector -->
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">Workout Type</div>
+    <div class="ex-type-grid">
+      <div class="ex-type-btn active" id="extype-cardio" onclick="setExType('cardio')">
+        <span class="ex-type-icon">🏃</span>
+        <span class="ex-type-label">Cardio</span>
+      </div>
+      <div class="ex-type-btn" id="extype-strength" onclick="setExType('strength')">
+        <span class="ex-type-icon">🏋️</span>
+        <span class="ex-type-label">Strength</span>
+      </div>
+      <div class="ex-type-btn" id="extype-hiit" onclick="setExType('hiit')">
+        <span class="ex-type-icon">⚡</span>
+        <span class="ex-type-label">HIIT / Class</span>
+      </div>
+      <div class="ex-type-btn" id="extype-other" onclick="setExType('other')">
+        <span class="ex-type-icon">🤸</span>
+        <span class="ex-type-label">Other</span>
+      </div>
+    </div>
+
+    <!-- Name field -->
+    <div class="form-field full" style="margin-bottom:10px">
+      <div class="form-label">Activity Name</div>
+      <input class="input-field" id="exName" placeholder="e.g. Morning run" type="text" autocorrect="off" autocapitalize="words">
+    </div>
+
+    <!-- Duration row -->
+    <div id="exDurationSection">
+      <div class="form-label" style="margin-bottom:6px">Duration</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:4px;flex:1">
+          <input class="input-field" id="exDurH" placeholder="0" type="number" inputmode="numeric" min="0" max="23" style="text-align:center;padding:10px 8px">
+          <span style="color:var(--text2);font-size:13px;flex-shrink:0">hr</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex:1">
+          <input class="input-field" id="exDurM" placeholder="30" type="number" inputmode="numeric" min="0" max="59" style="text-align:center;padding:10px 8px" oninput="estimateCalories()">
+          <span style="color:var(--text2);font-size:13px;flex-shrink:0">min</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cardio extras -->
+    <div id="exCardioExtras" style="display:block">
+      <div class="form-grid" style="margin-bottom:10px">
+        <div class="form-field">
+          <div class="form-label">Distance (optional)</div>
+          <div style="display:flex;gap:4px;align-items:center">
+            <input class="input-field" id="exDistance" placeholder="5.0" type="number" inputmode="decimal" step="0.1" style="flex:1">
+            <select class="input-field" id="exDistUnit" style="flex:0 0 60px;padding:10px 4px;font-size:13px">
+              <option>km</option>
+              <option>mi</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-field">
+          <div class="form-label">Avg HR (optional)</div>
+          <div style="display:flex;gap:4px;align-items:center">
+            <input class="input-field" id="exHeartRate" placeholder="145" type="number" inputmode="numeric" style="flex:1">
+            <span style="font-size:12px;color:var(--text2);flex-shrink:0">bpm</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strength extras -->
+    <div id="exStrengthExtras" style="display:none">
+      <div class="form-grid" style="margin-bottom:10px">
+        <div class="form-field">
+          <div class="form-label">Sets (optional)</div>
+          <input class="input-field" id="exSets" placeholder="e.g. 4" type="number" inputmode="numeric">
+        </div>
+        <div class="form-field">
+          <div class="form-label">Reps (optional)</div>
+          <input class="input-field" id="exReps" placeholder="e.g. 10" type="number" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+
+    <!-- Calories row -->
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">Calories Burned</div>
+        <div id="exCalcBadge" style="font-size:11px;color:var(--text3);display:none">estimated</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input class="input-field" id="exKcal" placeholder="e.g. 300" type="number" inputmode="numeric" style="flex:1;font-size:18px;font-weight:700;text-align:center" oninput="onExKcalInput()">
+        <span style="font-size:14px;color:var(--text2);flex-shrink:0">kcal</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px" id="exEstNote">Fill in duration to auto-estimate, or enter manually.</div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-field full" style="margin-bottom:4px">
+      <div class="form-label">Notes (optional)</div>
+      <input class="input-field" id="exNotes" placeholder="e.g. Felt strong today" type="text" autocorrect="on">
+    </div>
+
+    </div><!-- end modal-scroll -->
+    <div class="modal-footer">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-surface" style="flex:1" onclick="closeExerciseModal()">Cancel</button>
+        <button class="btn btn-accent" style="flex:2;background:var(--green)" id="exLogBtn" onclick="logExercise()">Log Exercise</button>
+      </div>
+      <div id="exDeleteRow" style="display:none;margin-top:10px">
+        <button class="btn" style="width:100%;background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25);padding:12px" onclick="deleteExercise()">Delete Entry</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- WEIGHT MODAL -->
 <div class="modal-overlay" id="weightModal">
   <div class="modal">
@@ -870,6 +1027,7 @@ function cloudSave() {
         foodLog,
         weightLog,
         customMeals,
+        exerciseLog,
         updatedAt: Date.now()
       });
     } catch(e) { console.warn('Cloud save failed:', e); }
@@ -883,12 +1041,14 @@ async function cloudLoad(uid) {
     const snap = await window._fbGetDoc(docRef);
     if (snap.exists()) {
       const d = snap.data();
-      if (d.settings)    { settings = d.settings;       STORAGE.set('df_settings', settings); }
-      if (d.foodLog)     { foodLog = d.foodLog;          STORAGE.set('df_food', foodLog); }
-      if (d.weightLog)   { weightLog = d.weightLog;      STORAGE.set('df_weight', weightLog); }
-      if (d.customMeals) { customMeals = d.customMeals;  STORAGE.set('df_meals', customMeals); }
+      if (d.settings)     { settings     = d.settings;      STORAGE.set('df_settings', settings); }
+      if (d.foodLog)      { foodLog      = d.foodLog;       STORAGE.set('df_food', foodLog); }
+      if (d.weightLog)    { weightLog    = d.weightLog;     STORAGE.set('df_weight', weightLog); }
+      if (d.customMeals)  { customMeals  = d.customMeals;  STORAGE.set('df_meals', customMeals); }
+      if (d.exerciseLog)  { exerciseLog  = d.exerciseLog;  STORAGE.set('df_exercise', exerciseLog); }
       // Ensure macroSplit exists
       if (!settings.macroSplit) settings.macroSplit = { ...DEFAULT_MACRO_SPLIT };
+      if (settings.eatBackExercise == null) settings.eatBackExercise = false;
     }
   } catch(e) { console.warn('Cloud load failed (using local cache):', e); }
 }
@@ -982,6 +1142,7 @@ let settings = STORAGE.get('df_settings', {
   name: '',
   macroSplit: { ...DEFAULT_MACRO_SPLIT },
   targetWeight: null,    // stored in kg
+  eatBackExercise: false, // whether exercise calories offset daily goal
 });
 // Ensure macroSplit exists for users upgrading from older saved data
 if (!settings.macroSplit) settings.macroSplit = { ...DEFAULT_MACRO_SPLIT };
@@ -997,13 +1158,15 @@ function macroTargets() {
     sugar:   s.sugarG,
   };
 }
-let foodLog  = STORAGE.get('df_food', []);   // [{id, date, name, kcal, thumb, time}]
-let weightLog = STORAGE.get('df_weight', []); // [{date, kg}]
+let foodLog     = STORAGE.get('df_food', []);      // [{id, date, name, kcal, thumb, time}]
+let weightLog   = STORAGE.get('df_weight', []);    // [{date, kg}]
+let exerciseLog = STORAGE.get('df_exercise', []);  // [{id, date, time, type, name, durationMin, kcal, ...}]
 
 function save() {
   STORAGE.set('df_settings', settings);
   STORAGE.set('df_food', foodLog);
   STORAGE.set('df_weight', weightLog);
+  STORAGE.set('df_exercise', exerciseLog);
   cloudSave();
 }
 
@@ -1239,7 +1402,10 @@ function showTab(name) {
   if (selectionMode) { selectionMode = false; selectedIds = new Set(); document.getElementById('selectionBar').style.display = 'none'; }
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-'+name)?.classList.add('active');
-  document.getElementById('fab').style.display = (name === 'today') ? 'flex' : 'none';
+  const fabEl = document.getElementById('fab');
+  if (name === 'today') { fabEl.style.display = 'flex'; fabEl.textContent = '+'; fabEl.onclick = () => viewingDate && viewingDate !== todayStr() ? openFoodModalForDate(viewingDate) : openFoodModal(); }
+  else if (name === 'exercise') { fabEl.style.display = 'flex'; fabEl.textContent = '+'; fabEl.onclick = () => openExerciseModal(); }
+  else { fabEl.style.display = 'none'; }
   renderContent();
 }
 
@@ -1273,6 +1439,7 @@ function renderContent() {
   // never get baked into the "swiped" position on subsequent renders
   swipedItemId = null;
   if (currentTab === 'today')    c.innerHTML = renderToday();
+  if (currentTab === 'exercise') c.innerHTML = renderExercise();
   if (currentTab === 'weight')   c.innerHTML = renderWeight();
   if (currentTab === 'history')  c.innerHTML = renderHistory();
   if (currentTab === 'settings') c.innerHTML = renderSettings();
@@ -1300,8 +1467,10 @@ function renderToday() {
   }
 
   const eaten = dateKcal(activeDate);
-  const remaining = goal - eaten;
-  const pct = Math.min(eaten / goal, 1);
+  const burned = exerciseLog.filter(e => e.date === activeDate).reduce((s,e) => s + (e.kcal||0), 0);
+  const effectiveGoal = (settings.eatBackExercise && burned > 0) ? goal + burned : goal;
+  const remaining = effectiveGoal - eaten;
+  const pct = Math.min(eaten / effectiveGoal, 1);
   const circumference = 2 * Math.PI * 52;
   const dash = circumference * pct;
   const colour = pct > 1 ? '#ef4444' : pct > 0.85 ? '#f59e0b' : '#f97316';
@@ -1348,8 +1517,8 @@ function renderToday() {
       </svg>
       <div class="ring-stats">
         <div class="ring-stat">
-          <div class="ring-stat-val" style="color:var(--accent)">${goal}</div>
-          <div class="ring-stat-lbl">Goal</div>
+          <div class="ring-stat-val" style="color:var(--accent)">${effectiveGoal}</div>
+          <div class="ring-stat-lbl">${settings.eatBackExercise && burned > 0 ? 'Goal+Ex' : 'Goal'}</div>
         </div>
         <div class="ring-stat">
           <div class="ring-stat-val" style="color:${remaining<0?'var(--red)':'var(--green)'}">${Math.abs(remaining)}</div>
@@ -1405,6 +1574,28 @@ function renderToday() {
     <div class="streak-row">${days.join('')}</div>
   </div>
 
+  ${(() => {
+    const exItems = exerciseLog.filter(e => e.date === activeDate);
+    if (!exItems.length) return '';
+    const totalBurned = exItems.reduce((s,e) => s + (e.kcal||0), 0);
+    const totalMin = exItems.reduce((s,e) => s + (e.durationMin||0), 0);
+    const durStr = totalMin >= 60
+      ? `${Math.floor(totalMin/60)}h ${totalMin%60 > 0 ? (totalMin%60)+'m' : ''}`.trim()
+      : `${totalMin}m`;
+    return `<div class="card" style="cursor:pointer" onclick="showTab('exercise')">
+      <div class="card-title" style="margin-bottom:10px">Exercise</div>
+      <div class="ex-home-card-inner">
+        <div class="ex-home-icon">🔥</div>
+        <div class="ex-home-info">
+          <div class="ex-home-kcal">${totalBurned} kcal burned</div>
+          <div class="ex-home-sub">${exItems.length} workout${exItems.length !== 1 ? 's' : ''}${totalMin ? ' · ' + durStr : ''}</div>
+        </div>
+        <div style="font-size:12px;color:var(--accent);font-weight:600">View →</div>
+      </div>
+      ${settings.eatBackExercise ? `<div style="font-size:11px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">+${totalBurned} kcal added to today's goal</div>` : ''}
+    </div>`;
+  })()}
+
   <div class="section-head">${isViewingPast ? fmtDate(activeDate) + ' — Log' : "Today's Log"}</div>
   <div class="card" style="padding:0 16px">
     ${todayItems.length === 0
@@ -1420,6 +1611,115 @@ function renderToday() {
   <button class="btn btn-surface" style="width:100%;margin-top:4px;padding:12px;font-size:14px" onclick="openFoodModalForDate('${activeDate}')">
     + Add food to ${fmtDate(activeDate)}
   </button>` : ''}`;
+}
+
+// EXERCISE TAB
+const EX_TYPES = {
+  cardio:   { icon: '🏃', label: 'Cardio' },
+  strength: { icon: '🏋️', label: 'Strength' },
+  hiit:     { icon: '⚡', label: 'HIIT / Class' },
+  other:    { icon: '🤸', label: 'Other' },
+};
+
+// MET values for calorie estimation (kcal/min per kg — approximate 70kg person)
+const EX_MET = {
+  cardio:   8,   // ~running/cycling moderate
+  strength: 4,
+  hiit:     9,
+  other:    5,
+};
+
+function dateExercise(date) {
+  return exerciseLog.filter(e => e.date === date);
+}
+
+function fmtDuration(min) {
+  if (!min) return '';
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function renderExercise() {
+  const today = todayStr();
+  const todayEx = dateExercise(today);
+  const todayBurned = todayEx.reduce((s,e) => s + (e.kcal||0), 0);
+  const todayMin = todayEx.reduce((s,e) => s + (e.durationMin||0), 0);
+
+  // Build all logged dates (most recent first)
+  const allDates = [...new Set(exerciseLog.map(e => e.date))].sort().reverse();
+
+  const todaySummary = todayEx.length ? `
+    <div class="ex-summary-row">
+      <div class="ex-summary-stat">
+        <div class="ex-summary-val">${todayBurned}</div>
+        <div class="ex-summary-lbl">kcal burned</div>
+      </div>
+      <div class="ex-summary-stat">
+        <div class="ex-summary-val">${fmtDuration(todayMin) || '—'}</div>
+        <div class="ex-summary-lbl">active time</div>
+      </div>
+      <div class="ex-summary-stat">
+        <div class="ex-summary-val">${todayEx.length}</div>
+        <div class="ex-summary-lbl">workout${todayEx.length !== 1 ? 's' : ''}</div>
+      </div>
+    </div>` : '';
+
+  const todayItems = todayEx.length
+    ? todayEx.reverse().map(e => exItemHTML(e)).join('')
+    : `<div class="empty" style="padding:28px 0">
+        <div class="empty-icon">🏃</div>
+        <div class="empty-text">No exercise logged today</div>
+        <div class="empty-sub">Tap + to log a workout</div>
+      </div>`;
+
+  // Past days (not today)
+  const pastDays = allDates.filter(d => d !== today).slice(0, 10);
+  const pastHTML = pastDays.map(date => {
+    const items = [...exerciseLog.filter(e => e.date === date)].reverse();
+    const burned = items.reduce((s,e) => s + (e.kcal||0), 0);
+    const mins = items.reduce((s,e) => s + (e.durationMin||0), 0);
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:${items.length?'10px':'0'}">
+        <div class="card-title" style="margin:0">${fmtDate(date)}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--green)">${burned} kcal</div>
+      </div>
+      ${items.map(e => exItemHTML(e, true)).join('')}
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">Today's Exercise</div>
+    ${todaySummary}
+    <div class="card" style="padding:0 0;background:transparent;border:none;margin-bottom:0">
+      ${todayItems}
+    </div>
+  </div>
+
+  ${pastDays.length ? `<div class="section-head">Past Workouts</div>${pastHTML}` : ''}`;
+}
+
+function exItemHTML(e, showDate=false) {
+  const type = EX_TYPES[e.type] || EX_TYPES.other;
+  const meta = [
+    e.durationMin ? fmtDuration(e.durationMin) : null,
+    e.distance ? `${e.distance} ${e.distUnit||'km'}` : null,
+    e.heartRate ? `${e.heartRate} bpm` : null,
+    e.sets && e.reps ? `${e.sets}×${e.reps}` : null,
+    e.notes || null,
+  ].filter(Boolean).join(' · ');
+
+  return `<div class="ex-item" onclick="openEditExercise('${e.id}')">
+    <div class="ex-item-icon">${type.icon}</div>
+    <div class="ex-item-info">
+      <div class="ex-item-name">${e.name || type.label}</div>
+      ${meta ? `<div class="ex-item-meta">${meta}</div>` : ''}
+      <div class="ex-item-meta">${fmtTime(e.time)}</div>
+    </div>
+    ${e.kcal ? `<div class="ex-item-kcal">−${e.kcal} kcal</div>` : ''}
+  </div>`;
 }
 
 // WEIGHT TAB
@@ -1738,6 +2038,27 @@ function renderSettings() {
       <div><div class="setting-label">Daily Goal</div><div class="setting-sub">Target calories per day</div></div>
       <input class="setting-input" id="s-goal" value="${settings.dailyGoal}" type="number" min="500" max="9999">
     </div>
+    <div class="setting-row" style="border-bottom:none">
+      <div>
+        <div class="setting-label">Eat back exercise calories</div>
+        <div class="setting-sub">Adds calories burned to your daily goal</div>
+      </div>
+      <div onclick="toggleEatBack()" style="cursor:pointer;display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <div id="eatBackToggle" style="
+          width:46px;height:26px;border-radius:13px;position:relative;
+          background:${settings.eatBackExercise ? 'var(--green)' : 'var(--surface2)'};
+          border:1.5px solid ${settings.eatBackExercise ? 'var(--green)' : 'var(--border)'};
+          transition:background 0.2s,border-color 0.2s;flex-shrink:0">
+          <div style="
+            position:absolute;top:2px;
+            left:${settings.eatBackExercise ? '22px' : '2px'};
+            width:18px;height:18px;border-radius:50%;
+            background:white;transition:left 0.2s;
+            box-shadow:0 1px 3px rgba(0,0,0,0.3)">
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -1859,7 +2180,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v2.7 · Data synced to cloud
+    DailyFuel v2.8 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -1920,6 +2241,12 @@ function toggleApiKeySection() {
   const open = section.style.display === 'none';
   section.style.display = open ? 'block' : 'none';
   chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+function toggleEatBack() {
+  settings.eatBackExercise = !settings.eatBackExercise;
+  save();
+  renderContent();
 }
 
 function setWeightUnit(val) {
@@ -2974,6 +3301,171 @@ function resetPortion(id) {
   renderContent();
 }
 
+// ── EXERCISE MODAL ───────────────────────────────────────────────────────────
+let currentExType = 'cardio';
+let editingExId = null;
+let exKcalManual = false; // true once user has typed their own kcal value
+
+function openExerciseModal(date) {
+  editingExId = null;
+  exKcalManual = false;
+  currentExType = 'cardio';
+  document.getElementById('exerciseModalTitle').textContent = 'Log Exercise';
+  document.getElementById('exLogBtn').textContent = 'Log Exercise';
+  document.getElementById('exDeleteRow').style.display = 'none';
+  // Clear fields
+  ['exName','exDurH','exDurM','exDistance','exHeartRate','exSets','exReps','exKcal','exNotes'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('exCalcBadge').style.display = 'none';
+  document.getElementById('exEstNote').textContent = 'Fill in duration to auto-estimate, or enter manually.';
+  setExType('cardio');
+  document.getElementById('exerciseModal').classList.add('open');
+  document.getElementById('exerciseModalScroll').scrollTop = 0;
+  setTimeout(() => document.getElementById('exName')?.focus(), 350);
+}
+
+function closeExerciseModal() {
+  document.getElementById('exerciseModal').classList.remove('open');
+  editingExId = null;
+}
+
+function setExType(type) {
+  currentExType = type;
+  ['cardio','strength','hiit','other'].forEach(t => {
+    document.getElementById('extype-'+t)?.classList.toggle('active', t === type);
+  });
+  // Show/hide extras
+  document.getElementById('exCardioExtras').style.display = (type === 'cardio') ? 'block' : 'none';
+  document.getElementById('exStrengthExtras').style.display = (type === 'strength') ? 'block' : 'none';
+  // Suggest default name if empty
+  const nameEl = document.getElementById('exName');
+  const typeLabels = { cardio: '', strength: '', hiit: '', other: '' };
+  if (!nameEl.value) {
+    const defaults = { cardio: 'Run', strength: 'Weights session', hiit: 'HIIT workout', other: 'Workout' };
+    nameEl.placeholder = defaults[type] || 'Workout';
+  }
+  if (!exKcalManual) estimateCalories();
+}
+
+function estimateCalories() {
+  if (exKcalManual) return; // don't override manual entry
+  const h = parseInt(document.getElementById('exDurH')?.value) || 0;
+  const m = parseInt(document.getElementById('exDurM')?.value) || 0;
+  const totalMin = h * 60 + m;
+  if (!totalMin) {
+    document.getElementById('exCalcBadge').style.display = 'none';
+    document.getElementById('exEstNote').textContent = 'Fill in duration to auto-estimate, or enter manually.';
+    return;
+  }
+  // Simple MET-based estimate: kcal = MET × 3.5 × weight_kg / 200 × minutes
+  // Use 70kg as default body weight (rough estimate)
+  const weight = 70;
+  const met = EX_MET[currentExType] || 5;
+  const estimated = Math.round(met * 3.5 * weight / 200 * totalMin);
+  document.getElementById('exKcal').value = estimated;
+  document.getElementById('exCalcBadge').style.display = 'block';
+  document.getElementById('exEstNote').textContent = `Estimated for ${totalMin} min ${EX_TYPES[currentExType]?.label || 'workout'}. Override if you have an accurate reading.`;
+}
+
+function onExKcalInput() {
+  exKcalManual = true;
+  document.getElementById('exCalcBadge').style.display = 'none';
+  document.getElementById('exEstNote').textContent = 'Manual entry — your number will be used as-is.';
+}
+
+function logExercise() {
+  const name = document.getElementById('exName')?.value?.trim() || EX_TYPES[currentExType]?.label || 'Workout';
+  const h = parseInt(document.getElementById('exDurH')?.value) || 0;
+  const m = parseInt(document.getElementById('exDurM')?.value) || 0;
+  const durationMin = h * 60 + m || null;
+  const kcalRaw = document.getElementById('exKcal')?.value;
+  const kcal = kcalRaw ? parseInt(kcalRaw) : null;
+  const distance = parseFloat(document.getElementById('exDistance')?.value) || null;
+  const distUnit = document.getElementById('exDistUnit')?.value || 'km';
+  const heartRate = parseInt(document.getElementById('exHeartRate')?.value) || null;
+  const sets = parseInt(document.getElementById('exSets')?.value) || null;
+  const reps = parseInt(document.getElementById('exReps')?.value) || null;
+  const notes = document.getElementById('exNotes')?.value?.trim() || null;
+
+  if (!durationMin && !kcal) { showToast('Add a duration or calories burned'); return; }
+
+  const entry = {
+    id: editingExId || uid(),
+    date: todayStr(),
+    time: new Date().toISOString(),
+    type: currentExType,
+    name,
+    durationMin,
+    kcal,
+    distance,
+    distUnit: distance ? distUnit : null,
+    heartRate,
+    sets,
+    reps,
+    notes,
+  };
+
+  if (editingExId) {
+    const idx = exerciseLog.findIndex(e => e.id === editingExId);
+    if (idx !== -1) { entry.date = exerciseLog[idx].date; exerciseLog[idx] = entry; }
+  } else {
+    exerciseLog.push(entry);
+  }
+
+  save();
+  closeExerciseModal();
+  const kcalStr = kcal ? ` · ${kcal} kcal` : '';
+  const durStr = durationMin ? ` · ${fmtDuration(durationMin)}` : '';
+  showToast(`${editingExId ? 'Updated' : 'Logged'}: ${name}${durStr}${kcalStr}`);
+  renderContent();
+}
+
+function deleteExercise() {
+  if (!editingExId) return;
+  const e = exerciseLog.find(x => x.id === editingExId);
+  if (!e || !confirm(`Delete "${e.name}"?`)) return;
+  exerciseLog = exerciseLog.filter(x => x.id !== editingExId);
+  save();
+  closeExerciseModal();
+  showToast('Exercise entry deleted');
+  renderContent();
+}
+
+function openEditExercise(id) {
+  const e = exerciseLog.find(x => x.id === id);
+  if (!e) return;
+  editingExId = id;
+  exKcalManual = true; // treat existing kcal as manual
+
+  document.getElementById('exerciseModalTitle').textContent = 'Edit Exercise';
+  document.getElementById('exLogBtn').textContent = 'Save Changes';
+  document.getElementById('exDeleteRow').style.display = 'block';
+
+  setExType(e.type || 'other');
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+  set('exName', e.name);
+  if (e.durationMin) {
+    set('exDurH', Math.floor(e.durationMin / 60) || '');
+    set('exDurM', e.durationMin % 60 || '');
+  }
+  set('exDistance', e.distance);
+  if (e.distUnit) { const el = document.getElementById('exDistUnit'); if (el) el.value = e.distUnit; }
+  set('exHeartRate', e.heartRate);
+  set('exSets', e.sets);
+  set('exReps', e.reps);
+  set('exKcal', e.kcal);
+  set('exNotes', e.notes);
+
+  if (e.kcal) {
+    document.getElementById('exCalcBadge').style.display = 'none';
+    document.getElementById('exEstNote').textContent = 'Edit the values above, then save.';
+  }
+
+  document.getElementById('exerciseModal').classList.add('open');
+  document.getElementById('exerciseModalScroll').scrollTop = 0;
+}
+
 // ── WEIGHT MODAL ─────────────────────────────────────────────────────────────
 function openWeightModal() {
   const u = settings.weightUnit || 'kg';
@@ -3223,6 +3715,9 @@ function addGroupToMeal(mealId) {
 // ── CLOSE MODALS ON BG TAP ───────────────────────────────────────────────────
 document.getElementById('foodModal').addEventListener('click', function(e) {
   if (e.target === this) closeFoodModal();
+});
+document.getElementById('exerciseModal').addEventListener('click', function(e) {
+  if (e.target === this) closeExerciseModal();
 });
 
 // ── SWIPE DOWN TO CLOSE food modal ───────────────────────────────────────────
