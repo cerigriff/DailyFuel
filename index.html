@@ -1025,6 +1025,23 @@
   </div>
 </div>
 
+<!-- DANGER CONFIRMATION MODAL -->
+<div class="modal-overlay" id="dangerModal" style="align-items:center;padding:24px">
+  <div style="background:var(--surface);border-radius:var(--radius);width:100%;max-width:390px;padding:24px;border:1.5px solid rgba(239,68,68,0.4)">
+    <div style="font-size:32px;text-align:center;margin-bottom:12px" id="dangerIcon">⚠️</div>
+    <div style="font-size:18px;font-weight:800;color:var(--red);text-align:center;margin-bottom:10px" id="dangerTitle"></div>
+    <div style="font-size:14px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:20px" id="dangerDesc"></div>
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:20px;font-size:12px;color:var(--text3);line-height:1.5;text-align:center" id="dangerDetail"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-surface" style="flex:1;padding:13px" onclick="closeDangerModal()">Cancel</button>
+      <button class="btn" id="dangerConfirmBtn" style="flex:1.5;padding:13px;background:var(--red);color:white;opacity:0.4;cursor:default" disabled onclick="executeDanger()">
+        <span id="dangerBtnLabel">Delete</span>
+        <span id="dangerCountdown" style="font-size:11px;margin-left:4px;opacity:0.8"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2473,16 +2490,19 @@ function renderSettings() {
 
   <div class="card" style="border-color:rgba(239,68,68,0.3)">
     <div class="card-title" style="color:var(--red)">Danger Zone</div>
-    <button class="btn" style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);width:100%;padding:12px;margin-bottom:8px" onclick="clearToday()">
+    <button class="btn" style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);width:100%;padding:12px;margin-bottom:8px" onclick="showDangerModal('today')">
       Clear Today's Log
     </button>
-    <button class="btn" style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);width:100%;padding:12px" onclick="clearAll()">
+    <button class="btn" style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);width:100%;padding:12px;margin-bottom:8px" onclick="showDangerModal('logs')">
+      Clear All Logs
+    </button>
+    <button class="btn" style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);width:100%;padding:12px" onclick="showDangerModal('reset')">
       Reset All Data
     </button>
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v3.0 · Data synced to cloud
+    DailyFuel v3.1 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -4148,22 +4168,124 @@ function saveSettings() {
   renderContent();
 }
 
-function clearToday() {
-  if (!confirm('Clear all food logged today?')) return;
-  foodLog = foodLog.filter(f => f.date !== todayStr());
-  save();
-  showToast('Today\'s log cleared');
-  renderContent();
+// ── DANGER ZONE ───────────────────────────────────────────────────────────────
+let _dangerAction = null;
+let _dangerTimer  = null;
+
+const DANGER_CONFIG = {
+  today: {
+    icon:    '🗓️',
+    title:   'Clear Today\'s Log',
+    desc:    'This will remove all food and exercise entries logged today. Your weight entries, history, and settings will not be affected.',
+    detail:  'This action only affects today. Everything else stays intact.',
+    btn:     'Clear Today',
+    delay:   2,
+  },
+  logs: {
+    icon:    '🗑️',
+    title:   'Clear All Logs',
+    desc:    'This will permanently delete your entire food, weight and exercise history. Your settings, goals, body stats and API key will be kept.',
+    detail:  'All log data will be deleted from this device and the cloud. This cannot be undone.',
+    btn:     'Clear All Logs',
+    delay:   3,
+  },
+  reset: {
+    icon:    '⚠️',
+    title:   'Reset All Data',
+    desc:    'This will delete everything — all logs and all settings — returning the app to a completely fresh state for your account.',
+    detail:  'Your calorie goal, body stats, API key, macro targets and all log data will be permanently deleted from this device and the cloud. This cannot be undone.',
+    btn:     'Reset Everything',
+    delay:   4,
+  },
+};
+
+function showDangerModal(action) {
+  _dangerAction = action;
+  const cfg = DANGER_CONFIG[action];
+  document.getElementById('dangerIcon').textContent  = cfg.icon;
+  document.getElementById('dangerTitle').textContent = cfg.title;
+  document.getElementById('dangerDesc').textContent  = cfg.desc;
+  document.getElementById('dangerDetail').textContent = cfg.detail;
+  document.getElementById('dangerBtnLabel').textContent = cfg.btn;
+
+  // Reset button to disabled
+  const btn = document.getElementById('dangerConfirmBtn');
+  btn.disabled = true;
+  btn.style.opacity = '0.4';
+  btn.style.cursor = 'default';
+
+  // Countdown
+  let remaining = cfg.delay;
+  document.getElementById('dangerCountdown').textContent = `(${remaining}s)`;
+  clearInterval(_dangerTimer);
+  _dangerTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(_dangerTimer);
+      document.getElementById('dangerCountdown').textContent = '';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    } else {
+      document.getElementById('dangerCountdown').textContent = `(${remaining}s)`;
+    }
+  }, 1000);
+
+  document.getElementById('dangerModal').classList.add('open');
 }
 
-function clearAll() {
-  if (!confirm('Reset ALL data? This cannot be undone.')) return;
-  foodLog = [];
-  weightLog = [];
-  settings = { apiKey: '', dailyGoal: 2500, weightUnit: 'kg', foodUnit: 'g', name: '' };
-  save();
-  showToast('All data cleared');
-  renderContent();
+function closeDangerModal() {
+  clearInterval(_dangerTimer);
+  document.getElementById('dangerModal').classList.remove('open');
+  _dangerAction = null;
+}
+
+function executeDanger() {
+  const action = _dangerAction;
+  closeDangerModal();
+
+  if (action === 'today') {
+    const today = todayStr();
+    foodLog     = foodLog.filter(f => f.date !== today);
+    exerciseLog = exerciseLog.filter(e => e.date !== today);
+    save();
+    showToast('Today\'s log cleared');
+    renderContent();
+
+  } else if (action === 'logs') {
+    foodLog     = [];
+    weightLog   = [];
+    exerciseLog = [];
+    STORAGE.set('df_ex_summary', null); // clear cached weekly summary
+    save();
+    showToast('All logs cleared');
+    renderContent();
+
+  } else if (action === 'reset') {
+    foodLog     = [];
+    weightLog   = [];
+    exerciseLog = [];
+    customMeals = [];
+    settings = {
+      apiKey: '',
+      dailyGoal: 2500,
+      weightUnit: 'kg',
+      foodUnit: 'g',
+      name: '',
+      macroSplit: { proteinPct: 30, carbsPct: 40, fatPct: 30, fibreG: 30, sugarG: 30 },
+      targetWeight: null,
+      eatBackExercise: false,
+      sex: null,
+      age: null,
+      heightCm: null,
+      activityLevel: 'light',
+    };
+    STORAGE.set('df_ex_summary', null);
+    save();
+    saveMealsStore();
+    showToast('App reset to factory defaults');
+    renderContent();
+  }
 }
 
 // ── SELECTION MODE ───────────────────────────────────────────────────────────
@@ -4290,6 +4412,9 @@ document.getElementById('foodModal').addEventListener('click', function(e) {
 });
 document.getElementById('exerciseModal').addEventListener('click', function(e) {
   if (e.target === this) closeExerciseModal();
+});
+document.getElementById('dangerModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDangerModal();
 });
 
 // ── SWIPE DOWN TO CLOSE food modal ───────────────────────────────────────────
