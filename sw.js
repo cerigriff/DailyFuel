@@ -1,53 +1,45 @@
-// Nom List Service Worker — read cache strategy
-const CACHE = 'nom-list-v42';
-const PRECACHE = [
-  '/nom-list/',
-  '/nom-list/index.html',
-  '/nom-list/manifest.json',
-  'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js'
+const CACHE_NAME = 'dailyfuel-v26';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-// Install — cache shell
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
+// Install: cache all assets
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
   );
+  self.skipWaiting();
 });
 
-// Activate — clean old caches
-self.addEventListener('activate', e => {
-  e.waitUntil(
+// Activate: clean up old caches
+self.addEventListener('activate', event => {
+  event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
+  self.clients.claim();
 });
 
-// Fetch — cache first for shell, network first for Firebase API calls
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
+// Fetch: serve from cache, fall back to network
+self.addEventListener('fetch', event => {
+  // Only handle same-origin requests (not OpenAI API calls)
+  if (!event.request.url.startsWith(self.location.origin)) return;
 
-  // Always fetch Firebase/OpenAI calls from network
-  if (
-    url.hostname.includes('firestore.googleapis.com') ||
-    url.hostname.includes('firebase') ||
-    url.hostname.includes('openai.com')
-  ) {
-    return; // let browser handle
-  }
-
-  // Cache-first for everything else (app shell, icons, CDN scripts)
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(resp => {
-        if (resp && resp.status === 200 && e.request.method === 'GET') {
-          const clone = resp.clone();
-          caches.open(CACHE).then(cache => cache.put(e.request, clone));
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      return cached || fetch(event.request).then(response => {
+        // Cache any new successful responses
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
-        return resp;
-      }).catch(() => caches.match('/nom-list/index.html')); // offline fallback
-    })
+        return response;
+      });
+    }).catch(() => caches.match('./index.html'))
   );
 });
