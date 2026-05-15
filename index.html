@@ -1310,7 +1310,7 @@ function copyToToday(id) {
 }
 
 function foodItemHTML(f, showDel=true, showCopy=false) {
-  const mealBadge = f.isCustomMeal ? `<span style="font-size:10px;background:rgba(249,115,22,0.15);color:var(--accent);border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:600">🍱 Custom meal</span>` : '';
+  const mealBadge = f.isCustomMeal ? `<div style="display:inline-block;font-size:10px;background:rgba(249,115,22,0.15);color:var(--accent);border-radius:4px;padding:1px 6px;margin-top:3px;font-weight:600">🍱 Custom meal</div>` : '';
   const isExpanded = expandedItemId === f.id;
   const isSelected = selectionMode && selectedIds.has(f.id);
   const isSwiped   = swipedItemId === f.id;
@@ -1325,7 +1325,7 @@ function foodItemHTML(f, showDel=true, showCopy=false) {
   let expandHTML = '';
   if (isExpanded && showDel && !selectionMode) {
     const unit = foodUnitLabel();
-    const hasServing = f.basePortion && f.basePortion > 0;
+    const hasServing = !f.isCustomMeal && f.basePortion && f.basePortion > 0;
     const current = hasServing ? (f.currentPortion != null ? f.currentPortion : f.basePortion) : null;
     const portionMult = f.portionMultiplier != null ? f.portionMultiplier : 1;
 
@@ -1402,7 +1402,8 @@ function foodItemHTML(f, showDel=true, showCopy=false) {
     <div class="food-item${selectionMode ? ' selectable' : ''}${isSelected ? ' selected' : ''}${isSwiped ? ' swiped' : ''}" ${rowClick} ${longPressAttrs} data-swipe-id="${f.id}" style="cursor:${showDel?'pointer':'default'}">
       ${thumbHTML}
       <div class="food-info">
-        <div class="food-name">${f.name}${mealBadge}</div>
+        <div class="food-name">${f.name}</div>
+        ${mealBadge}
         <div class="food-meta">${metaText}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
@@ -2505,7 +2506,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v3.4 · Data synced to cloud
+    DailyFuel v3.5 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -3135,6 +3136,14 @@ function setFoodMode(mode) {
     document.getElementById('manualBox').style.display = 'none';
   }
 
+  // Hide ingredient-edit buttons whenever the mode changes
+  const saveBtn   = document.getElementById('saveIngEditBtn');
+  const cancelBtn = document.getElementById('cancelIngEditBtn');
+  if (saveBtn)   saveBtn.style.display   = 'none';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  const logRow = document.getElementById('logFoodRow');
+  if (logRow) logRow.style.display = '';
+
   currentFoodMode = mode;
   // Update buttons
   ['photo','search','meal','manual'].forEach(m => {
@@ -3263,6 +3272,14 @@ function closeFoodModal() {
   document.getElementById('mealListView').style.display = 'block';
   document.getElementById('mealEditView').style.display = 'none';
   document.getElementById('foodModalTitle').textContent = 'Log Food';
+  // Hide ingredient-edit buttons if they were left visible
+  const saveBtn   = document.getElementById('saveIngEditBtn');
+  const cancelBtn = document.getElementById('cancelIngEditBtn');
+  if (saveBtn)   saveBtn.style.display   = 'none';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  // Restore the normal log row if it was hidden during ingredient editing
+  const logRow = document.getElementById('logFoodRow');
+  if (logRow) logRow.style.display = '';
 }
 
 // ── SEARCH MODE ───────────────────────────────────────────────────────────────
