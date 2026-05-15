@@ -791,7 +791,7 @@
           <input class="input-field" id="fFibre" placeholder="e.g. 0" type="number" inputmode="decimal" step="0.1">
         </div>
         <div class="form-field">
-          <div class="form-label">Sugar (g)</div>
+          <div class="form-label">Added Sugar (g)</div>
           <input class="input-field" id="fSugar" placeholder="e.g. 0" type="number" inputmode="decimal" step="0.1">
         </div>
       </div>
@@ -1288,7 +1288,7 @@ function macroChipsHTML(f) {
   if (f.carbs   != null) chips.push(`<span class="macro-chip c">Carbs ${f.carbs}g</span>`);
   if (f.fat     != null) chips.push(`<span class="macro-chip f">Fat ${f.fat}g</span>`);
   if (f.fibre   != null) chips.push(`<span class="macro-chip fi">Fibre ${f.fibre}g</span>`);
-  if (f.sugar   != null) chips.push(`<span class="macro-chip s">Sugar ${f.sugar}g</span>`);
+  if (f.sugar   != null) chips.push(`<span class="macro-chip s">Added Sugar ${f.sugar}g</span>`);
   return chips.join('');
 }
 function copyToToday(id) {
@@ -1655,7 +1655,7 @@ function renderToday() {
         ${ringHTML(m.carbs,   t.carbs,   '#fb923c', 'Carbs')}
         ${ringHTML(m.fat,     t.fat,     '#facc15', 'Fat')}
         ${ringHTML(m.fibre,   t.fibre,   '#4ade80', 'Fibre')}
-        ${ringHTML(m.sugar,   t.sugar,   '#f87171', 'Sugar')}
+        ${ringHTML(m.sugar,   t.sugar,   '#f87171', 'Added Sugar')}
       </div>
     </div>`;
   })()}
@@ -2453,7 +2453,7 @@ function renderSettings() {
       </div>
     </div>
     <div class="setting-row" style="border-bottom:none">
-      <div><div class="setting-label" style="color:#f87171">Sugar target</div><div class="setting-sub">NHS recommends max 30g/day</div></div>
+      <div><div class="setting-label" style="color:#f87171">Added Sugar target</div><div class="setting-sub">NHS recommends max 30g free/added sugars per day</div></div>
       <div style="display:flex;align-items:center;gap:6px">
         <input class="setting-input" id="ms-sugar" value="${settings.macroSplit.sugarG}" type="number" min="0" max="200" style="width:70px">
         <span style="font-size:13px;color:var(--text2)">g</span>
@@ -2502,7 +2502,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v3.2 · Data synced to cloud
+    DailyFuel v3.3 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -3236,7 +3236,8 @@ Return 8-10 realistic food options matching this query (different portion sizes 
 Important: Use British English throughout — crisps not chips, biscuits not cookies, courgette not zucchini, aubergine not eggplant, etc. Use UK brand names and UK supermarket products where relevant (e.g. Tesco, Sainsbury's, Walkers, Warburtons). Use metric portions (g, ml) by default unless the food is naturally measured otherwise.
 Reply ONLY with a JSON array, no markdown, no extra text:
 [{"name":"food name","portion":"portion size in ${unit}","kcal":number,"protein":number,"carbs":number,"fat":number,"fibre":number,"sugar":number},...]
-All number fields must be numbers. Be accurate. Vary portions sensibly.`;
+All number fields must be numbers. Be accurate. Vary portions sensibly.
+IMPORTANT: The "sugar" field must be FREE/ADDED sugars only (not total sugar). Do not include naturally occurring sugars from milk (lactose), plain fruit, or vegetables. Only count sugars that are added during manufacturing or preparation, or are free sugars (honey, syrups, fruit juices, table sugar). For example: plain milk = 0 added sugar; latte = 0 added sugar (unless flavoured syrup added); yoghurt = 0 added sugar (unless sweetened); biscuit = count the sugar; fruit juice = count as free sugar.`;
 
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -3363,7 +3364,8 @@ async function analyzeImage(dataUrl) {
     const unit = foodUnitLabel();
     const prompt = `Analyse this food image carefully. Identify what the food is and estimate its nutritional content for the visible portion. Describe portion size using ${unit}. Reply ONLY with valid JSON in exactly this format, no markdown, no extra text:
 {"name":"food name","portion":"portion description in ${unit}","kcal":number,"protein":number,"carbs":number,"fat":number,"fibre":number,"sugar":number,"note":"brief confidence note"}
-All number fields must be numbers (not strings). Use your best estimate — do not leave fields null.`;
+All number fields must be numbers (not strings). Use your best estimate — do not leave fields null.
+IMPORTANT: The "sugar" field must be FREE/ADDED sugars only (not total sugar). Do not include naturally occurring sugars from milk (lactose), plain fruit, or plain vegetables. Only count sugars added during manufacturing or preparation, or free sugars (honey, syrups, fruit juices, table sugar). For example: plain milk/latte = 0 added sugar; plain fruit = 0; biscuit/cake/juice = count the sugar.`;
 
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -3403,7 +3405,7 @@ All number fields must be numbers (not strings). Use your best estimate — do n
           <span class="macro-chip c">Carbs ${json.carbs}g</span>
           <span class="macro-chip f">Fat ${json.fat}g</span>
           <span class="macro-chip fi">Fibre ${json.fibre}g</span>
-          <span class="macro-chip s">Sugar ${json.sugar}g</span>
+          <span class="macro-chip s">Added Sugar ${json.sugar}g</span>
         </div>
         <div class="result-note">ℹ️ ${json.note}</div>
       </div>
