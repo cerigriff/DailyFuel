@@ -768,10 +768,28 @@
           <div class="form-label">Food Name</div>
           <input class="input-field" id="fName" placeholder="e.g. Chicken breast" type="text" oninput="if(this.value.trim()) showAddToMealButton()">
         </div>
-        <div class="form-field">
-          <div class="form-label">Portion Size</div>
-          <input class="input-field" id="fPortion" placeholder="e.g. 150g or 1 cup" type="text">
+        <!-- Hidden field stores the full original portion string for saving -->
+        <input type="hidden" id="fPortion">
+      </div>
+      <!-- Serving Size stepper — scales all macros proportionally -->
+      <div class="expand-stepper-row" style="margin-bottom:14px">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px">Serving Size</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px">Adjusting scales all macros below</div>
         </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="expand-stepper">
+            <button class="exp-step-btn" type="button" onclick="stepServingSize(-10)">−</button>
+            <input class="exp-step-val" type="number" inputmode="decimal" id="fServingSize"
+              placeholder="—" style="width:58px"
+              onchange="onServingSizeChange(this.value)"
+              onblur="onServingSizeChange(this.value)">
+            <button class="exp-step-btn" type="button" onclick="stepServingSize(10)">+</button>
+          </div>
+          <span class="exp-step-unit" id="fServingUnit">g</span>
+        </div>
+      </div>
+      <div class="form-grid">
         <div class="form-field">
           <div class="form-label">Calories (kcal)</div>
           <input class="input-field" id="fKcal" placeholder="e.g. 250" type="number" inputmode="numeric">
@@ -2344,15 +2362,6 @@ function renderSettings() {
         [{val:'kg',label:'kg'},{val:'st_lbs',label:'st & lbs'},{val:'lbs',label:'lbs'}],
         wu, 'setWeightUnit')}
     </div>
-    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
-      <div>
-        <div class="setting-label">Food Portion Unit</div>
-        <div class="setting-sub">Used when describing portions to the AI</div>
-      </div>
-      ${seg('seg-food',
-        [{val:'g',label:'grams'},{val:'oz',label:'oz'},{val:'ml',label:'ml'}],
-        fu, 'setFoodUnit')}
-    </div>
   </div>
 
   <div class="card">
@@ -2506,7 +2515,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v3.5 · Data synced to cloud
+    DailyFuel v3.6 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
@@ -3122,10 +3131,15 @@ function closeMealPicker() {
 }
 
 function clearManualForm() {
-  ['fName','fPortion','fKcal','fProtein','fCarbs','fFat','fFibre','fSugar'].forEach(id => {
+  ['fName','fPortion','fKcal','fProtein','fCarbs','fFat','fFibre','fSugar','fServingSize'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  const unitEl = document.getElementById('fServingUnit');
+  if (unitEl) unitEl.textContent = 'g';
+  window._baseServing = null;
+  window._baseServingUnit = null;
+  window._baseMacros = null;
   hideAddToMealButton();
 }
 
@@ -3328,15 +3342,14 @@ async function doFoodSearch(query, isMore=false) {
   }
 
   try {
-    const unit = foodUnitLabel();
     const excludeClause = searchSeenNames.size
       ? `\nDo NOT repeat any of these already-shown options: ${[...searchSeenNames].join(', ')}.`
       : '';
     const prompt = `You are a UK nutrition database for a user based in Great Britain. The user searched for: "${query}"
 Return 8-10 realistic food options matching this query (different portion sizes / preparations / brands are fine).${excludeClause}
-Important: Use British English throughout — crisps not chips, biscuits not cookies, courgette not zucchini, aubergine not eggplant, etc. Use UK brand names and UK supermarket products where relevant (e.g. Tesco, Sainsbury's, Walkers, Warburtons). Use metric portions (g, ml) by default unless the food is naturally measured otherwise.
+Important: Use British English throughout — crisps not chips, biscuits not cookies, courgette not zucchini, aubergine not eggplant, etc. Use UK brand names and UK supermarket products where relevant (e.g. Tesco, Sainsbury's, Walkers, Warburtons). Use metric portions — grams (g) for solid foods, millilitres (ml) for liquids.
 Reply ONLY with a JSON array, no markdown, no extra text:
-[{"name":"food name","portion":"portion size in ${unit}","kcal":number,"protein":number,"carbs":number,"fat":number,"fibre":number,"sugar":number},...]
+[{"name":"food name","portion":"portion size e.g. 150g or 300ml","kcal":number,"protein":number,"carbs":number,"fat":number,"fibre":number,"sugar":number},...]
 All number fields must be numbers. Be accurate. Vary portions sensibly.
 IMPORTANT: The "sugar" field must be FREE/ADDED sugars only (not total sugar). Do not include naturally occurring sugars from milk (lactose), plain fruit, or vegetables. Only count sugars that are added during manufacturing or preparation, or are free sugars (honey, syrups, fruit juices, table sugar). For example: plain milk = 0 added sugar; latte = 0 added sugar (unless flavoured syrup added); yoghurt = 0 added sugar (unless sweetened); biscuit = count the sugar; fruit juice = count as free sugar.`;
 
@@ -3458,13 +3471,64 @@ function onImageSelected(e) {
 function fillForm(j) {
   const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
   set('fName',    j.name);
-  set('fPortion', j.portion);
+  set('fPortion', j.portion); // hidden field keeps the full string
   set('fKcal',    j.kcal);
   set('fProtein', j.protein);
   set('fCarbs',   j.carbs);
   set('fFat',     j.fat);
   set('fFibre',   j.fibre);
   set('fSugar',   j.sugar);
+
+  // Parse serving size number and unit from the portion string
+  const portionStr = String(j.portion || '').trim();
+  const match = portionStr.match(/^([\d.]+)\s*([a-zA-Z]*)/);
+  const servingNum = match ? parseFloat(match[1]) : null;
+  const servingUnit = match && match[2] ? match[2] : 'g';
+  const servingEl = document.getElementById('fServingSize');
+  const unitEl    = document.getElementById('fServingUnit');
+  if (servingEl) servingEl.value = servingNum != null ? servingNum : '';
+  if (unitEl)    unitEl.textContent = servingUnit;
+
+  // Store base values for proportional scaling
+  window._baseServing = servingNum;
+  window._baseServingUnit = servingUnit;
+  window._baseMacros = {
+    kcal:    parseFloat(j.kcal)    || 0,
+    protein: parseFloat(j.protein) || 0,
+    carbs:   parseFloat(j.carbs)   || 0,
+    fat:     parseFloat(j.fat)     || 0,
+    fibre:   parseFloat(j.fibre)   || 0,
+    sugar:   parseFloat(j.sugar)   || 0,
+  };
+}
+
+function stepServingSize(delta) {
+  const el = document.getElementById('fServingSize');
+  if (!el) return;
+  const current = parseFloat(el.value) || 0;
+  const next = Math.max(1, Math.round((current + delta) * 10) / 10);
+  el.value = next;
+  onServingSizeChange(next);
+}
+
+function onServingSizeChange(val) {
+  const newSize = parseFloat(val);
+  const base = window._baseServing;
+  const baseMacros = window._baseMacros;
+  if (!newSize || !base || !baseMacros || base === 0) return;
+  const ratio = newSize / base;
+  const round1 = v => Math.round(v * 10) / 10;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  set('fKcal',    Math.round(baseMacros.kcal    * ratio));
+  set('fProtein', round1(baseMacros.protein * ratio));
+  set('fCarbs',   round1(baseMacros.carbs   * ratio));
+  set('fFat',     round1(baseMacros.fat     * ratio));
+  set('fFibre',   round1(baseMacros.fibre   * ratio));
+  set('fSugar',   round1(baseMacros.sugar   * ratio));
+  // Update the hidden portion field so the saved label stays accurate
+  const unit = window._baseServingUnit || 'g';
+  const portionEl = document.getElementById('fPortion');
+  if (portionEl) portionEl.value = `${newSize}${unit}`;
 }
 
 async function analyzeImage(dataUrl) {
@@ -3473,9 +3537,8 @@ async function analyzeImage(dataUrl) {
 
   try {
     const base64 = dataUrl.split(',')[1];
-    const unit = foodUnitLabel();
-    const prompt = `Analyse this food image carefully. Identify what the food is and estimate its nutritional content for the visible portion. Describe portion size using ${unit}. Reply ONLY with valid JSON in exactly this format, no markdown, no extra text:
-{"name":"food name","portion":"portion description in ${unit}","kcal":number,"protein":number,"carbs":number,"fat":number,"fibre":number,"sugar":number,"note":"brief confidence note"}
+    const prompt = `Analyse this food image carefully. Identify what the food is and estimate its nutritional content for the visible portion. Describe portion size in grams (g) for solid foods or millilitres (ml) for liquids. Reply ONLY with valid JSON in exactly this format, no markdown, no extra text:
+{"name":"food name","portion":"portion description e.g. 150g or 300ml","kcal":number,"protein":number,"carbs":number,"fat":number,"fibre":number,"sugar":number,"note":"brief confidence note"}
 All number fields must be numbers (not strings). Use your best estimate — do not leave fields null.
 IMPORTANT: The "sugar" field must be FREE/ADDED sugars only (not total sugar). Do not include naturally occurring sugars from milk (lactose), plain fruit, or plain vegetables. Only count sugars added during manufacturing or preparation, or free sugars (honey, syrups, fruit juices, table sugar). For example: plain milk/latte = 0 added sugar; plain fruit = 0; biscuit/cake/juice = count the sugar.`;
 
