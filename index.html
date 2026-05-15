@@ -363,10 +363,22 @@
     border-top: 1px solid var(--border);
   }
   .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-handle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
   .modal-handle {
     width: 36px; height: 4px; background: var(--border);
-    border-radius: 2px; margin: 0 auto 20px;
+    border-radius: 2px; margin: 0;
   }
+  .modal-close-btn {
+    background: var(--surface2); border: none; cursor: pointer;
+    color: var(--text2); border-radius: 50%;
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; line-height: 1; flex-shrink: 0;
+    transition: color 0.15s, background 0.15s;
+  }
+  .modal-close-btn:active { color: var(--accent); background: var(--surface); }
   .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
 
   /* ── CAMERA AREA ── */
@@ -652,7 +664,10 @@
 <div class="modal-overlay" id="foodModal">
   <div class="modal">
     <div class="modal-scroll" id="foodModalScroll">
-    <div class="modal-handle"></div>
+    <div class="modal-handle-row">
+      <div class="modal-handle"></div>
+      <button class="modal-close-btn" onclick="closeFoodModal()" aria-label="Close">&#x2335;</button>
+    </div>
     <div class="modal-title" id="foodModalTitle">Log Food</div>
 
     <!-- Recents section (hidden when empty) -->
@@ -838,7 +853,10 @@
 <div class="modal-overlay" id="mealPickerModal">
   <div class="modal" style="max-height:70vh">
     <div style="padding:20px 20px 0">
-      <div class="modal-handle"></div>
+      <div class="modal-handle-row">
+        <div class="modal-handle"></div>
+        <button class="modal-close-btn" onclick="closeMealPicker()" aria-label="Close">&#x2335;</button>
+      </div>
       <div class="modal-title">Add to which meal?</div>
       <div id="mealPickerIngredientPreview" style="font-size:13px;color:var(--text2);margin-bottom:14px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm)"></div>
     </div>
@@ -854,7 +872,10 @@
 <div class="modal-overlay" id="exerciseModal">
   <div class="modal">
     <div class="modal-scroll" id="exerciseModalScroll">
-    <div class="modal-handle"></div>
+    <div class="modal-handle-row">
+      <div class="modal-handle"></div>
+      <button class="modal-close-btn" onclick="closeExerciseModal()" aria-label="Close">&#x2335;</button>
+    </div>
     <div class="modal-title" id="exerciseModalTitle">Log Exercise</div>
 
     <!-- ── AI NATURAL LANGUAGE INPUT ── -->
@@ -996,7 +1017,10 @@
 <!-- WEIGHT MODAL -->
 <div class="modal-overlay" id="weightModal">
   <div class="modal">
-    <div class="modal-handle"></div>
+    <div class="modal-handle-row">
+      <div class="modal-handle"></div>
+      <button class="modal-close-btn" onclick="closeWeightModal()" aria-label="Close">&#x2335;</button>
+    </div>
     <div class="modal-title">Log Weight</div>
     <div id="weightModalBody"></div>
     <div style="display:flex;gap:8px">
@@ -2515,7 +2539,7 @@ function renderSettings() {
   </div>
 
   <div style="text-align:center;color:var(--text3);font-size:12px;margin-top:12px">
-    DailyFuel v3.7 · Data synced to cloud
+    DailyFuel v3.8 · Data synced to cloud
   </div>
   <div style="text-align:center;margin-top:10px">
     <button class="btn btn-surface" style="font-size:13px;padding:8px 20px" onclick="signOutUser()">Sign Out</button>
